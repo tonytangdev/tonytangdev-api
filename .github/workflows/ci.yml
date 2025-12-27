@@ -39,3 +39,10 @@ jobs:
         run: pnpm test:e2e
         env:
           DATABASE_STRATEGY: inmemory
+          SKILLS_MODULE_ENABLED: true
+          EXPERIENCES_MODULE_ENABLED: true
+          EDUCATION_MODULE_ENABLED: true
+          PROJECTS_MODULE_ENABLED: true
+          PROFILE_MODULE_ENABLED: true
+          LANGUAGES_MODULE_ENABLED: true
+          REFACTORINGS_MODULE_ENABLED: true
