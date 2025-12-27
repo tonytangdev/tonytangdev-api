@@ -4,16 +4,21 @@ import { SkillsController } from './skills.controller';
 import { GetSkillsUseCase } from '../../../../application/ports/inbound/get-skills.use-case';
 import { GetSkillsByCategoryUseCase } from '../../../../application/ports/inbound/get-skills-by-category.use-case';
 import { GetHighlightedSkillsUseCase } from '../../../../application/ports/inbound/get-highlighted-skills.use-case';
+import { CreateSkillUseCase } from '../../../../application/ports/inbound/create-skill.use-case';
+import { CreateSkillCategoryUseCase } from '../../../../application/ports/inbound/create-skill-category.use-case';
 import { SkillMapper } from '../mappers/skill.mapper';
 import { Skill } from '../../../../domain/entities/skill.entity';
 import { SkillCategory } from '../../../../domain/entities/skill-category.entity';
 import { ProficiencyLevel } from '../../../../domain/value-objects/proficiency-level.vo';
+import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
 
 describe('SkillsController', () => {
   let controller: SkillsController;
   let getSkillsUseCase: jest.Mocked<GetSkillsUseCase>;
   let getSkillsByCategoryUseCase: jest.Mocked<GetSkillsByCategoryUseCase>;
   let getHighlightedSkillsUseCase: jest.Mocked<GetHighlightedSkillsUseCase>;
+  let createSkillUseCase: jest.Mocked<CreateSkillUseCase>;
+  let createSkillCategoryUseCase: jest.Mocked<CreateSkillCategoryUseCase>;
 
   beforeEach(async () => {
     const mockGetSkillsUseCase = {
@@ -25,6 +30,14 @@ describe('SkillsController', () => {
     };
 
     const mockGetHighlightedSkillsUseCase = {
+      execute: jest.fn(),
+    };
+
+    const mockCreateSkillUseCase = {
+      execute: jest.fn(),
+    };
+
+    const mockCreateSkillCategoryUseCase = {
       execute: jest.fn(),
     };
 
@@ -40,14 +53,24 @@ describe('SkillsController', () => {
           provide: GetHighlightedSkillsUseCase,
           useValue: mockGetHighlightedSkillsUseCase,
         },
+        { provide: CreateSkillUseCase, useValue: mockCreateSkillUseCase },
+        {
+          provide: CreateSkillCategoryUseCase,
+          useValue: mockCreateSkillCategoryUseCase,
+        },
         SkillMapper,
       ],
-    }).compile();
+    })
+      .overrideGuard(ApiKeyGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<SkillsController>(SkillsController);
     getSkillsUseCase = module.get(GetSkillsUseCase);
     getSkillsByCategoryUseCase = module.get(GetSkillsByCategoryUseCase);
     getHighlightedSkillsUseCase = module.get(GetHighlightedSkillsUseCase);
+    createSkillUseCase = module.get(CreateSkillUseCase);
+    createSkillCategoryUseCase = module.get(CreateSkillCategoryUseCase);
   });
 
   it('should be defined', () => {
@@ -191,6 +214,169 @@ describe('SkillsController', () => {
 
       expect(result.data).toHaveLength(0);
       expect(result.meta.total).toBe(0);
+    });
+  });
+
+  describe('createSkill', () => {
+    it('should create a skill and return response', async () => {
+      const dto = {
+        name: 'Rust',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.INTERMEDIATE,
+        yearsOfExperience: 2,
+        isHighlighted: true,
+      };
+
+      const createdSkill = new Skill({
+        id: 'skill-123',
+        name: 'Rust',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.INTERMEDIATE,
+        yearsOfExperience: 2,
+        order: 5,
+        isHighlighted: true,
+      });
+
+      createSkillUseCase.execute.mockResolvedValue(createdSkill);
+
+      const result = await controller.createSkill(dto);
+
+      expect(createSkillUseCase.execute).toHaveBeenCalledWith(dto);
+      expect(result.data).toHaveProperty('id', 'skill-123');
+      expect(result.data).toHaveProperty('name', 'Rust');
+      expect(result.data).toHaveProperty(
+        'proficiency',
+        ProficiencyLevel.INTERMEDIATE,
+      );
+      expect(result.data).toHaveProperty('isHighlighted', true);
+      expect(result.meta).toEqual({});
+    });
+
+    it('should create skill without yearsOfExperience', async () => {
+      const dto = {
+        name: 'Go',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.BEGINNER,
+        isHighlighted: false,
+      };
+
+      const createdSkill = new Skill({
+        id: 'skill-456',
+        name: 'Go',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.BEGINNER,
+        yearsOfExperience: null,
+        order: 6,
+        isHighlighted: false,
+      });
+
+      createSkillUseCase.execute.mockResolvedValue(createdSkill);
+
+      const result = await controller.createSkill(dto);
+
+      expect(createSkillUseCase.execute).toHaveBeenCalledWith(dto);
+      expect(result.data.yearsOfExperience).toBeNull();
+    });
+
+    it('should handle all proficiency levels', async () => {
+      const proficiencyLevels = [
+        ProficiencyLevel.BEGINNER,
+        ProficiencyLevel.INTERMEDIATE,
+        ProficiencyLevel.ADVANCED,
+        ProficiencyLevel.EXPERT,
+      ];
+
+      for (const proficiency of proficiencyLevels) {
+        const dto = {
+          name: `Skill-${proficiency}`,
+          categoryId: '1',
+          proficiency,
+          isHighlighted: false,
+        };
+
+        const createdSkill = new Skill({
+          id: `skill-${proficiency}`,
+          name: `Skill-${proficiency}`,
+          categoryId: '1',
+          proficiency,
+          yearsOfExperience: null,
+          order: 1,
+          isHighlighted: false,
+        });
+
+        createSkillUseCase.execute.mockResolvedValue(createdSkill);
+
+        const result = await controller.createSkill(dto);
+
+        expect(result.data.proficiency).toBe(proficiency);
+      }
+    });
+  });
+
+  describe('createCategory', () => {
+    it('should create a category and return response', async () => {
+      const dto = {
+        name: 'Cloud Platforms',
+      };
+
+      const createdCategory = new SkillCategory({
+        id: 'cat-123',
+        name: 'Cloud Platforms',
+        slug: 'cloud-platforms',
+        order: 4,
+      });
+
+      createSkillCategoryUseCase.execute.mockResolvedValue(createdCategory);
+
+      const result = await controller.createCategory(dto);
+
+      expect(createSkillCategoryUseCase.execute).toHaveBeenCalledWith(dto);
+      expect(result.data).toHaveProperty('id', 'cat-123');
+      expect(result.data).toHaveProperty('name', 'Cloud Platforms');
+      expect(result.data).toHaveProperty('slug', 'cloud-platforms');
+      expect(result.data).toHaveProperty('skills');
+      expect(result.data.skills).toEqual([]);
+      expect(result.meta).toEqual({});
+    });
+
+    it('should return category with empty skills array', async () => {
+      const dto = {
+        name: 'Testing Frameworks',
+      };
+
+      const createdCategory = new SkillCategory({
+        id: 'cat-456',
+        name: 'Testing Frameworks',
+        slug: 'testing-frameworks',
+        order: 5,
+      });
+
+      createSkillCategoryUseCase.execute.mockResolvedValue(createdCategory);
+
+      const result = await controller.createCategory(dto);
+
+      expect(result.data.skills).toBeInstanceOf(Array);
+      expect(result.data.skills).toHaveLength(0);
+    });
+
+    it('should handle category names with special characters', async () => {
+      const dto = {
+        name: 'DevOps & CI/CD',
+      };
+
+      const createdCategory = new SkillCategory({
+        id: 'cat-789',
+        name: 'DevOps & CI/CD',
+        slug: 'devops--cicd',
+        order: 6,
+      });
+
+      createSkillCategoryUseCase.execute.mockResolvedValue(createdCategory);
+
+      const result = await controller.createCategory(dto);
+
+      expect(createSkillCategoryUseCase.execute).toHaveBeenCalledWith(dto);
+      expect(result.data.slug).toBe('devops--cicd');
     });
   });
 });

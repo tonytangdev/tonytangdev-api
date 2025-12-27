@@ -26,6 +26,30 @@ export class TypeOrmSkillCategoryRepository extends SkillCategoryRepositoryPort 
     return category ? this.toDomain(category) : null;
   }
 
+  async create(category: SkillCategory): Promise<SkillCategory> {
+    const orm = this.toOrm(category);
+    const saved = await this.repository.save(orm);
+    return this.toDomain(saved);
+  }
+
+  async findByName(name: string): Promise<SkillCategory | null> {
+    const category = await this.repository.findOne({ where: { name } });
+    return category ? this.toDomain(category) : null;
+  }
+
+  async findById(id: string): Promise<SkillCategory | null> {
+    const category = await this.repository.findOne({ where: { id } });
+    return category ? this.toDomain(category) : null;
+  }
+
+  async getMaxOrder(): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder('category')
+      .select('MAX(category.order)', 'max')
+      .getRawOne<{ max: number | null }>();
+    return result?.max ?? 0;
+  }
+
   private toDomain(orm: SkillCategoryOrm): SkillCategory {
     return new SkillCategory({
       id: orm.id,
@@ -33,5 +57,14 @@ export class TypeOrmSkillCategoryRepository extends SkillCategoryRepositoryPort 
       slug: orm.slug,
       order: orm.order,
     });
+  }
+
+  private toOrm(category: SkillCategory): SkillCategoryOrm {
+    const orm = new SkillCategoryOrm();
+    orm.id = category.id;
+    orm.name = category.name;
+    orm.slug = category.slug;
+    orm.order = category.order;
+    return orm;
   }
 }

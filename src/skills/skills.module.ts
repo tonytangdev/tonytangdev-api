@@ -11,6 +11,8 @@ import { SkillGroupingService } from './domain/services/skill-grouping.service';
 import { GetSkillsUseCase } from './application/ports/inbound/get-skills.use-case';
 import { GetSkillsByCategoryUseCase } from './application/ports/inbound/get-skills-by-category.use-case';
 import { GetHighlightedSkillsUseCase } from './application/ports/inbound/get-highlighted-skills.use-case';
+import { CreateSkillUseCase } from './application/ports/inbound/create-skill.use-case';
+import { CreateSkillCategoryUseCase } from './application/ports/inbound/create-skill-category.use-case';
 
 // Application ports (outbound)
 import { SkillRepositoryPort } from './application/ports/outbound/skill.repository.port';
@@ -20,6 +22,8 @@ import { SkillCategoryRepositoryPort } from './application/ports/outbound/skill-
 import { GetSkillsService } from './application/services/get-skills.service';
 import { GetSkillsByCategoryService } from './application/services/get-skills-by-category.service';
 import { GetHighlightedSkillsService } from './application/services/get-highlighted-skills.service';
+import { CreateSkillService } from './application/services/create-skill.service';
+import { CreateSkillCategoryService } from './application/services/create-skill-category.service';
 
 // Infrastructure adapters (outbound) - In-Memory
 import { InMemorySkillRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-skill.repository';
@@ -63,6 +67,11 @@ export class SkillsModule {
         {
           provide: GetHighlightedSkillsUseCase,
           useClass: GetHighlightedSkillsService,
+        },
+        { provide: CreateSkillUseCase, useClass: CreateSkillService },
+        {
+          provide: CreateSkillCategoryUseCase,
+          useClass: CreateSkillCategoryService,
         },
         { provide: SkillRepositoryPort, useClass: InMemorySkillRepository },
         {
@@ -137,6 +146,11 @@ export class SkillsModule {
         {
           provide: GetHighlightedSkillsUseCase,
           useClass: GetHighlightedSkillsService,
+        },
+        { provide: CreateSkillUseCase, useClass: CreateSkillService },
+        {
+          provide: CreateSkillCategoryUseCase,
+          useClass: CreateSkillCategoryService,
         },
 
         // Outbound adapters (repositories)

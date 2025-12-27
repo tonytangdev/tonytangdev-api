@@ -35,6 +35,31 @@ export class MongooseSkillRepository extends SkillRepositoryPort {
     return docs.map((doc) => this.toDomain(doc));
   }
 
+  async create(skill: Skill): Promise<Skill> {
+    const doc = new this.model(this.toDocument(skill));
+    const saved = await doc.save();
+    return this.toDomain(saved);
+  }
+
+  async findByName(name: string): Promise<Skill | null> {
+    const doc = await this.model.findOne({ name }).exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async findById(id: string): Promise<Skill | null> {
+    const doc = await this.model.findById(id).exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async getMaxOrder(): Promise<number> {
+    const result = await this.model
+      .findOne()
+      .sort({ order: -1 })
+      .select('order')
+      .exec();
+    return result?.order ?? 0;
+  }
+
   private toDomain(doc: SkillDocument): Skill {
     return new Skill({
       id: doc._id,
@@ -45,5 +70,18 @@ export class MongooseSkillRepository extends SkillRepositoryPort {
       order: doc.order,
       isHighlighted: doc.isHighlighted,
     });
+  }
+
+  private toDocument(skill: Skill): Partial<SkillDocument> {
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      _id: skill.id as any,
+      name: skill.name,
+      categoryId: skill.categoryId,
+      proficiency: skill.proficiency,
+      yearsOfExperience: skill.yearsOfExperience,
+      order: skill.order,
+      isHighlighted: skill.isHighlighted,
+    };
   }
 }

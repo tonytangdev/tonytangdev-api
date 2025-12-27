@@ -179,4 +179,267 @@ describe('Skills API (e2e)', () => {
         });
     });
   });
+
+  describe('POST /api/v1/skills', () => {
+    const validApiKey = 'test-api-key';
+    let existingCategoryId: string;
+
+    beforeAll(async () => {
+      // Get an existing category ID for tests
+      const categoriesRes = await request(app.getHttpServer())
+        .get('/api/v1/skills/categories')
+        .expect(200);
+      existingCategoryId = categoriesRes.body.data[0].id;
+    });
+
+    it('should create a new skill with valid data', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Rust',
+          categoryId: existingCategoryId,
+          proficiency: 'intermediate',
+          yearsOfExperience: 2,
+          isHighlighted: true,
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data');
+          expect(res.body).toHaveProperty('meta');
+          expect(res.body.data).toHaveProperty('id');
+          expect(res.body.data.name).toBe('Rust');
+          expect(res.body.data.proficiency).toBe('intermediate');
+          expect(res.body.data.isHighlighted).toBe(true);
+        });
+    });
+
+    it('should reject request without API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .send({
+          name: 'Kotlin',
+          categoryId: existingCategoryId,
+          proficiency: 'beginner',
+          isHighlighted: false,
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body).toHaveProperty('message');
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject request with invalid API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', 'wrong-key')
+        .send({
+          name: 'Swift',
+          categoryId: existingCategoryId,
+          proficiency: 'beginner',
+          isHighlighted: false,
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject duplicate skill name', async () => {
+      const skillData = {
+        name: 'C++',
+        categoryId: existingCategoryId,
+        proficiency: 'advanced',
+        isHighlighted: false,
+      };
+
+      // Create first skill
+      await request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send(skillData)
+        .expect(201);
+
+      // Try to create duplicate
+      return request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send(skillData)
+        .expect(409)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 409);
+          expect(res.body.message).toContain('already exists');
+        });
+    });
+
+    it('should reject invalid categoryId', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Scala',
+          categoryId: '550e8400-e29b-41d4-a716-446655440000',
+          proficiency: 'beginner',
+          isHighlighted: false,
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should reject invalid proficiency level', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Elixir',
+          categoryId: existingCategoryId,
+          proficiency: 'invalid-level',
+          isHighlighted: false,
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+          expect(res.body).toHaveProperty('message');
+        });
+    });
+
+    it('should reject missing required fields', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Haskell',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+        });
+    });
+
+    it('should accept skill without yearsOfExperience', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Dart',
+          categoryId: existingCategoryId,
+          proficiency: 'beginner',
+          isHighlighted: false,
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.name).toBe('Dart');
+        });
+    });
+  });
+
+  describe('POST /api/v1/skills/categories', () => {
+    const validApiKey = 'test-api-key';
+
+    it('should create a new category with valid data', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Cloud Platforms',
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data');
+          expect(res.body).toHaveProperty('meta');
+          expect(res.body.data).toHaveProperty('id');
+          expect(res.body.data).toHaveProperty('name');
+          expect(res.body.data).toHaveProperty('slug');
+          expect(res.body.data).toHaveProperty('skills');
+          expect(res.body.data.name).toBe('Cloud Platforms');
+          expect(res.body.data.slug).toBe('cloud-platforms');
+          expect(res.body.data.skills).toEqual([]);
+        });
+    });
+
+    it('should auto-generate slug from name', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'DevOps & CI/CD',
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.slug).toBe('devops--cicd');
+        });
+    });
+
+    it('should reject request without API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .send({
+          name: 'Mobile Development',
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject request with invalid API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .set('x-api-key', 'wrong-key')
+        .send({
+          name: 'Testing Frameworks',
+        })
+        .expect(401);
+    });
+
+    it('should reject duplicate category name', async () => {
+      const categoryData = { name: 'Security Tools' };
+
+      // Create first category
+      await request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .set('x-api-key', validApiKey)
+        .send(categoryData)
+        .expect(201);
+
+      // Try to create duplicate
+      return request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .set('x-api-key', validApiKey)
+        .send(categoryData)
+        .expect(409)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 409);
+          expect(res.body.message).toContain('already exists');
+        });
+    });
+
+    it('should reject missing required fields', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .set('x-api-key', validApiKey)
+        .send({})
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+        });
+    });
+
+    it('should reject empty name', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: '',
+        })
+        .expect(400);
+    });
+  });
 });
