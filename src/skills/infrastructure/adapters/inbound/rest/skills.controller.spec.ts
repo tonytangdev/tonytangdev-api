@@ -6,6 +6,8 @@ import { GetSkillsByCategoryUseCase } from '../../../../application/ports/inboun
 import { GetHighlightedSkillsUseCase } from '../../../../application/ports/inbound/get-highlighted-skills.use-case';
 import { CreateSkillUseCase } from '../../../../application/ports/inbound/create-skill.use-case';
 import { CreateSkillCategoryUseCase } from '../../../../application/ports/inbound/create-skill-category.use-case';
+import { UpdateSkillUseCase } from '../../../../application/ports/inbound/update-skill.use-case';
+import { UpdateSkillCategoryUseCase } from '../../../../application/ports/inbound/update-skill-category.use-case';
 import { SkillMapper } from '../mappers/skill.mapper';
 import { Skill } from '../../../../domain/entities/skill.entity';
 import { SkillCategory } from '../../../../domain/entities/skill-category.entity';
@@ -41,6 +43,14 @@ describe('SkillsController', () => {
       execute: jest.fn(),
     };
 
+    const mockUpdateSkillUseCase = {
+      execute: jest.fn(),
+    };
+
+    const mockUpdateSkillCategoryUseCase = {
+      execute: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SkillsController],
       providers: [
@@ -57,6 +67,11 @@ describe('SkillsController', () => {
         {
           provide: CreateSkillCategoryUseCase,
           useValue: mockCreateSkillCategoryUseCase,
+        },
+        { provide: UpdateSkillUseCase, useValue: mockUpdateSkillUseCase },
+        {
+          provide: UpdateSkillCategoryUseCase,
+          useValue: mockUpdateSkillCategoryUseCase,
         },
         SkillMapper,
       ],

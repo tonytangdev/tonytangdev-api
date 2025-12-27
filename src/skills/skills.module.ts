@@ -13,6 +13,8 @@ import { GetSkillsByCategoryUseCase } from './application/ports/inbound/get-skil
 import { GetHighlightedSkillsUseCase } from './application/ports/inbound/get-highlighted-skills.use-case';
 import { CreateSkillUseCase } from './application/ports/inbound/create-skill.use-case';
 import { CreateSkillCategoryUseCase } from './application/ports/inbound/create-skill-category.use-case';
+import { UpdateSkillUseCase } from './application/ports/inbound/update-skill.use-case';
+import { UpdateSkillCategoryUseCase } from './application/ports/inbound/update-skill-category.use-case';
 
 // Application ports (outbound)
 import { SkillRepositoryPort } from './application/ports/outbound/skill.repository.port';
@@ -24,6 +26,8 @@ import { GetSkillsByCategoryService } from './application/services/get-skills-by
 import { GetHighlightedSkillsService } from './application/services/get-highlighted-skills.service';
 import { CreateSkillService } from './application/services/create-skill.service';
 import { CreateSkillCategoryService } from './application/services/create-skill-category.service';
+import { UpdateSkillService } from './application/services/update-skill.service';
+import { UpdateSkillCategoryService } from './application/services/update-skill-category.service';
 
 // Infrastructure adapters (outbound) - In-Memory
 import { InMemorySkillRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-skill.repository';
@@ -72,6 +76,11 @@ export class SkillsModule {
         {
           provide: CreateSkillCategoryUseCase,
           useClass: CreateSkillCategoryService,
+        },
+        { provide: UpdateSkillUseCase, useClass: UpdateSkillService },
+        {
+          provide: UpdateSkillCategoryUseCase,
+          useClass: UpdateSkillCategoryService,
         },
         { provide: SkillRepositoryPort, useClass: InMemorySkillRepository },
         {
@@ -151,6 +160,11 @@ export class SkillsModule {
         {
           provide: CreateSkillCategoryUseCase,
           useClass: CreateSkillCategoryService,
+        },
+        { provide: UpdateSkillUseCase, useClass: UpdateSkillService },
+        {
+          provide: UpdateSkillCategoryUseCase,
+          useClass: UpdateSkillCategoryService,
         },
 
         // Outbound adapters (repositories)

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { SkillRepositoryPort } from '../../../../../../application/ports/outbound/skill.repository.port';
 import { Skill } from '../../../../../../domain/entities/skill.entity';
 import { SkillOrm } from '../entities/skill.entity.orm';
@@ -59,6 +59,22 @@ export class TypeOrmSkillRepository extends SkillRepositoryPort {
       .select('MAX(skill.order)', 'max')
       .getRawOne<{ max: number | null }>();
     return result?.max ?? 0;
+  }
+
+  async update(skill: Skill): Promise<Skill> {
+    const orm = this.toOrm(skill);
+    await this.repository.save(orm);
+    return skill;
+  }
+
+  async findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<Skill | null> {
+    const skill = await this.repository.findOne({
+      where: { name, id: Not(excludeId) },
+    });
+    return skill ? this.toDomain(skill) : null;
   }
 
   private toDomain(orm: SkillOrm): Skill {

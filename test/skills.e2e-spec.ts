@@ -442,4 +442,301 @@ describe('Skills API (e2e)', () => {
         .expect(400);
     });
   });
+
+  describe('PUT /api/v1/skills/:id', () => {
+    const validApiKey = 'test-api-key';
+    let existingCategoryId: string;
+    let skillId: string;
+
+    beforeAll(async () => {
+      // Get existing category ID
+      const categoriesRes = await request(app.getHttpServer()).get(
+        '/api/v1/skills',
+      );
+      existingCategoryId = categoriesRes.body.data[0].id;
+
+      // Create a skill to update
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Test Update Skill',
+          categoryId: existingCategoryId,
+          proficiency: 'beginner',
+          yearsOfExperience: 1,
+          isHighlighted: false,
+        });
+      skillId = createRes.body.data.id;
+    });
+
+    it('should update skill with valid data', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/${skillId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Updated Skill Name',
+          categoryId: existingCategoryId,
+          proficiency: 'advanced',
+          yearsOfExperience: 3,
+          isHighlighted: true,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data');
+          expect(res.body.data.name).toBe('Updated Skill Name');
+          expect(res.body.data.proficiency).toBe('advanced');
+          expect(res.body.data.yearsOfExperience).toBe(3);
+          expect(res.body.data.isHighlighted).toBe(true);
+        });
+    });
+
+    it('should reject update without API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/${skillId}`)
+        .send({
+          name: 'Another Name',
+          categoryId: existingCategoryId,
+          proficiency: 'intermediate',
+          isHighlighted: false,
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject update with invalid API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/${skillId}`)
+        .set('x-api-key', 'wrong-key')
+        .send({
+          name: 'Another Name',
+          categoryId: existingCategoryId,
+          proficiency: 'intermediate',
+          isHighlighted: false,
+        })
+        .expect(401);
+    });
+
+    it('should return 404 for non-existent skill', () => {
+      return request(app.getHttpServer())
+        .put('/api/v1/skills/550e8400-e29b-41d4-a716-446655440000')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Non Existent',
+          categoryId: existingCategoryId,
+          proficiency: 'beginner',
+          isHighlighted: false,
+        })
+        .expect(404)
+        .expect((res) => {
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should reject duplicate name (different from current)', async () => {
+      // Create another skill
+      await request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Unique Skill Name',
+          categoryId: existingCategoryId,
+          proficiency: 'beginner',
+          isHighlighted: false,
+        });
+
+      // Try to update first skill with second skill's name
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/${skillId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Unique Skill Name',
+          categoryId: existingCategoryId,
+          proficiency: 'advanced',
+          isHighlighted: false,
+        })
+        .expect(409)
+        .expect((res) => {
+          expect(res.body.message).toContain('already exists');
+        });
+    });
+
+    it('should allow keeping same name (idempotent update)', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/${skillId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Updated Skill Name',
+          categoryId: existingCategoryId,
+          proficiency: 'expert',
+          isHighlighted: false,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.proficiency).toBe('expert');
+        });
+    });
+
+    it('should reject invalid categoryId', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/${skillId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Updated Name',
+          categoryId: '550e8400-e29b-41d4-a716-446655440000',
+          proficiency: 'beginner',
+          isHighlighted: false,
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should reject invalid proficiency level', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/${skillId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Updated Name',
+          categoryId: existingCategoryId,
+          proficiency: 'invalid-level',
+          isHighlighted: false,
+        })
+        .expect(400);
+    });
+  });
+
+  describe('PUT /api/v1/skills/categories/:id', () => {
+    const validApiKey = 'test-api-key';
+    let categoryId: string;
+
+    beforeAll(async () => {
+      // Create a category to update
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Test Update Category',
+        });
+      categoryId = createRes.body.data.id;
+    });
+
+    it('should update category with valid data', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/categories/${categoryId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Updated Category Name',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data');
+          expect(res.body.data.name).toBe('Updated Category Name');
+          expect(res.body.data.slug).toBe('updated-category-name');
+        });
+    });
+
+    it('should auto-regenerate slug from new name', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/categories/${categoryId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'New Category Name',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.slug).toBe('new-category-name');
+        });
+    });
+
+    it('should reject update without API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/categories/${categoryId}`)
+        .send({
+          name: 'Another Name',
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject update with invalid API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/categories/${categoryId}`)
+        .set('x-api-key', 'wrong-key')
+        .send({
+          name: 'Another Name',
+        })
+        .expect(401);
+    });
+
+    it('should return 404 for non-existent category', () => {
+      return request(app.getHttpServer())
+        .put('/api/v1/skills/categories/550e8400-e29b-41d4-a716-446655440000')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Non Existent',
+        })
+        .expect(404)
+        .expect((res) => {
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should reject duplicate name (different from current)', async () => {
+      // Create another category
+      await request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Unique Category Name',
+        });
+
+      // Try to update first category with second category's name
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/categories/${categoryId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Unique Category Name',
+        })
+        .expect(409)
+        .expect((res) => {
+          expect(res.body.message).toContain('already exists');
+        });
+    });
+
+    it('should allow keeping same name (idempotent update)', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/categories/${categoryId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'New Category Name',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.name).toBe('New Category Name');
+        });
+    });
+
+    it('should reject missing required fields', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/categories/${categoryId}`)
+        .set('x-api-key', validApiKey)
+        .send({})
+        .expect(400);
+    });
+
+    it('should reject empty name', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/skills/categories/${categoryId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: '',
+        })
+        .expect(400);
+    });
+  });
 });

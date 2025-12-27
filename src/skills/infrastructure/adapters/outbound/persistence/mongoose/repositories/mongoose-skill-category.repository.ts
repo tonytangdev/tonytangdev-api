@@ -52,6 +52,33 @@ export class MongooseSkillCategoryRepository extends SkillCategoryRepositoryPort
     return result?.order ?? 0;
   }
 
+  async update(category: SkillCategory): Promise<SkillCategory> {
+    await this.model
+      .updateOne({ _id: category.id }, this.toDocument(category))
+      .exec();
+    return category;
+  }
+
+  async findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<SkillCategory | null> {
+    const doc = await this.model
+      .findOne({ name, _id: { $ne: excludeId } })
+      .exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async findBySlugExcludingId(
+    slug: string,
+    excludeId: string,
+  ): Promise<SkillCategory | null> {
+    const doc = await this.model
+      .findOne({ slug, _id: { $ne: excludeId } })
+      .exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
   private toDomain(doc: SkillCategoryDocument): SkillCategory {
     return new SkillCategory({
       id: doc._id,

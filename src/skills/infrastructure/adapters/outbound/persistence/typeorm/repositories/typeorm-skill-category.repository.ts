@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { SkillCategoryRepositoryPort } from '../../../../../../application/ports/outbound/skill-category.repository.port';
 import { SkillCategory } from '../../../../../../domain/entities/skill-category.entity';
 import { SkillCategoryOrm } from '../entities/skill-category.entity.orm';
@@ -48,6 +48,32 @@ export class TypeOrmSkillCategoryRepository extends SkillCategoryRepositoryPort 
       .select('MAX(category.order)', 'max')
       .getRawOne<{ max: number | null }>();
     return result?.max ?? 0;
+  }
+
+  async update(category: SkillCategory): Promise<SkillCategory> {
+    const orm = this.toOrm(category);
+    await this.repository.save(orm);
+    return category;
+  }
+
+  async findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<SkillCategory | null> {
+    const category = await this.repository.findOne({
+      where: { name, id: Not(excludeId) },
+    });
+    return category ? this.toDomain(category) : null;
+  }
+
+  async findBySlugExcludingId(
+    slug: string,
+    excludeId: string,
+  ): Promise<SkillCategory | null> {
+    const category = await this.repository.findOne({
+      where: { slug, id: Not(excludeId) },
+    });
+    return category ? this.toDomain(category) : null;
   }
 
   private toDomain(orm: SkillCategoryOrm): SkillCategory {

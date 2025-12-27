@@ -41,4 +41,32 @@ export class InMemorySkillCategoryRepository extends SkillCategoryRepositoryPort
     const maxOrder = Math.max(...this.categories.map((c) => c.order));
     return Promise.resolve(maxOrder);
   }
+
+  async update(category: SkillCategory): Promise<SkillCategory> {
+    const index = this.categories.findIndex((c) => c.id === category.id);
+    if (index !== -1) {
+      this.categories[index] = category;
+    }
+    return Promise.resolve(category);
+  }
+
+  async findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<SkillCategory | null> {
+    const category = this.categories.find(
+      (c) => c.name === name && c.id !== excludeId,
+    );
+    return Promise.resolve(category || null);
+  }
+
+  async findBySlugExcludingId(
+    slug: string,
+    excludeId: string,
+  ): Promise<SkillCategory | null> {
+    const category = this.categories.find(
+      (c) => c.slug === slug && c.id !== excludeId,
+    );
+    return Promise.resolve(category || null);
+  }
 }

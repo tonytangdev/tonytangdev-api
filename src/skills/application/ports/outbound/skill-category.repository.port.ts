@@ -7,4 +7,13 @@ export abstract class SkillCategoryRepositoryPort {
   abstract findByName(name: string): Promise<SkillCategory | null>;
   abstract findById(id: string): Promise<SkillCategory | null>;
   abstract getMaxOrder(): Promise<number>;
+  abstract update(category: SkillCategory): Promise<SkillCategory>;
+  abstract findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<SkillCategory | null>;
+  abstract findBySlugExcludingId(
+    slug: string,
+    excludeId: string,
+  ): Promise<SkillCategory | null>;
 }

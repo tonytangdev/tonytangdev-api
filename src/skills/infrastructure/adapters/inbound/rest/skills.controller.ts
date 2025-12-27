@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   UseGuards,
   NotFoundException,
@@ -21,11 +22,15 @@ import { GetSkillsByCategoryUseCase } from '../../../../application/ports/inboun
 import { GetHighlightedSkillsUseCase } from '../../../../application/ports/inbound/get-highlighted-skills.use-case';
 import { CreateSkillUseCase } from '../../../../application/ports/inbound/create-skill.use-case';
 import { CreateSkillCategoryUseCase } from '../../../../application/ports/inbound/create-skill-category.use-case';
+import { UpdateSkillUseCase } from '../../../../application/ports/inbound/update-skill.use-case';
+import { UpdateSkillCategoryUseCase } from '../../../../application/ports/inbound/update-skill-category.use-case';
 import { SkillMapper } from '../mappers/skill.mapper';
 import { SkillCategoryResponseDto } from './dto/skill-category-response.dto';
 import { SkillResponseDto } from './dto/skill-response.dto';
 import { CreateSkillDto } from './dto/create-skill.dto';
 import { CreateSkillCategoryDto } from './dto/create-skill-category.dto';
+import { UpdateSkillDto } from './dto/update-skill.dto';
+import { UpdateSkillCategoryDto } from './dto/update-skill-category.dto';
 import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
 
 @ApiTags('skills')
@@ -37,6 +42,8 @@ export class SkillsController {
     private readonly getHighlightedSkillsUseCase: GetHighlightedSkillsUseCase,
     private readonly createSkillUseCase: CreateSkillUseCase,
     private readonly createSkillCategoryUseCase: CreateSkillCategoryUseCase,
+    private readonly updateSkillUseCase: UpdateSkillUseCase,
+    private readonly updateSkillCategoryUseCase: UpdateSkillCategoryUseCase,
     private readonly skillMapper: SkillMapper,
   ) {}
 
@@ -155,6 +162,57 @@ export class SkillsController {
   @ApiBearerAuth('api-key')
   async createCategory(@Body() dto: CreateSkillCategoryDto) {
     const category = await this.createSkillCategoryUseCase.execute(dto);
+    const data = this.skillMapper.toCategoryWithSkillsDto(category, []);
+    return { data, meta: {} };
+  }
+
+  @Put(':id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Update an existing skill' })
+  @ApiResponse({
+    status: 200,
+    description: 'Skill updated successfully',
+    type: SkillResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 401, description: 'Invalid API key' })
+  @ApiResponse({ status: 404, description: 'Skill not found' })
+  @ApiResponse({ status: 409, description: 'Skill name already exists' })
+  @ApiParam({ name: 'id', description: 'Skill ID' })
+  @ApiBody({ type: UpdateSkillDto })
+  @ApiBearerAuth('api-key')
+  async updateSkill(@Param('id') id: string, @Body() dto: UpdateSkillDto) {
+    const skill = await this.updateSkillUseCase.execute({ id, ...dto });
+    const data = this.skillMapper.toSkillDto(skill);
+    return { data, meta: {} };
+  }
+
+  @Put('categories/:id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Update an existing category' })
+  @ApiResponse({
+    status: 200,
+    description: 'Category updated successfully',
+    type: SkillCategoryResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 401, description: 'Invalid API key' })
+  @ApiResponse({ status: 404, description: 'Category not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Category name/slug already exists',
+  })
+  @ApiParam({ name: 'id', description: 'Category ID' })
+  @ApiBody({ type: UpdateSkillCategoryDto })
+  @ApiBearerAuth('api-key')
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() dto: UpdateSkillCategoryDto,
+  ) {
+    const category = await this.updateSkillCategoryUseCase.execute({
+      id,
+      ...dto,
+    });
     const data = this.skillMapper.toCategoryWithSkillsDto(category, []);
     return { data, meta: {} };
   }

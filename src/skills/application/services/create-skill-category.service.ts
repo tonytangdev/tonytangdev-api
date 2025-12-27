@@ -13,7 +13,7 @@ export class CreateSkillCategoryService implements CreateSkillCategoryUseCase {
 
   async execute(input: CreateSkillCategoryInput): Promise<SkillCategory> {
     // Auto-generate slug from name
-    const slug = this.generateSlug(input.name);
+    const slug = SkillCategory.generateSlug(input.name);
 
     // Check for duplicate name
     const existingByName = await this.categoryRepo.findByName(input.name);
@@ -44,13 +44,5 @@ export class CreateSkillCategoryService implements CreateSkillCategoryUseCase {
     });
 
     return this.categoryRepo.create(category);
-  }
-
-  private generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w-]/g, '');
   }
 }

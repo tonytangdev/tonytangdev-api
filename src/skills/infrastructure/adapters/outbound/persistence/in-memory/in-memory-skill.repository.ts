@@ -49,4 +49,22 @@ export class InMemorySkillRepository extends SkillRepositoryPort {
     const maxOrder = Math.max(...this.skills.map((s) => s.order));
     return Promise.resolve(maxOrder);
   }
+
+  async update(skill: Skill): Promise<Skill> {
+    const index = this.skills.findIndex((s) => s.id === skill.id);
+    if (index !== -1) {
+      this.skills[index] = skill;
+    }
+    return Promise.resolve(skill);
+  }
+
+  async findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<Skill | null> {
+    const skill = this.skills.find(
+      (s) => s.name === name && s.id !== excludeId,
+    );
+    return Promise.resolve(skill || null);
+  }
 }

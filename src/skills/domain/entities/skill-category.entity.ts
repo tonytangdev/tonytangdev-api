@@ -17,4 +17,12 @@ export class SkillCategory {
     this.slug = props.slug;
     this.order = props.order;
   }
+
+  static generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]/g, '');
+  }
 }

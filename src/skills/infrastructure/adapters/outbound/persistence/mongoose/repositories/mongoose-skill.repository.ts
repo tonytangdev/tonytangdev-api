@@ -60,6 +60,23 @@ export class MongooseSkillRepository extends SkillRepositoryPort {
     return result?.order ?? 0;
   }
 
+  async update(skill: Skill): Promise<Skill> {
+    await this.model
+      .updateOne({ _id: skill.id }, this.toDocument(skill))
+      .exec();
+    return skill;
+  }
+
+  async findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<Skill | null> {
+    const doc = await this.model
+      .findOne({ name, _id: { $ne: excludeId } })
+      .exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
   private toDomain(doc: SkillDocument): Skill {
     return new Skill({
       id: doc._id,

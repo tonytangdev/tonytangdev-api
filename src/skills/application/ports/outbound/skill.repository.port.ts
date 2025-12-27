@@ -8,4 +8,9 @@ export abstract class SkillRepositoryPort {
   abstract findByName(name: string): Promise<Skill | null>;
   abstract findById(id: string): Promise<Skill | null>;
   abstract getMaxOrder(): Promise<number>;
+  abstract update(skill: Skill): Promise<Skill>;
+  abstract findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<Skill | null>;
 }
