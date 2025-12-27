@@ -1,6 +1,7 @@
-import { Module, DynamicModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, DynamicModule, Provider } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import projectsConfig from './projects.config';
 
 // Domain services
@@ -19,10 +20,19 @@ import { GetProjectsService } from './application/services/get-projects.service'
 import { GetProjectByIdService } from './application/services/get-project-by-id.service';
 import { GetProjectsByTechnologyService } from './application/services/get-projects-by-technology.service';
 
-// Infrastructure adapters (outbound)
+// Infrastructure adapters (outbound) - In-Memory
 import { InMemoryProjectRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-project.repository';
+
+// Infrastructure adapters (outbound) - TypeORM
 import { TypeOrmProjectRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-project.repository';
 import { ProjectOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/project.entity.orm';
+
+// Infrastructure adapters (outbound) - Mongoose
+import { MongooseProjectRepository } from './infrastructure/adapters/outbound/persistence/mongoose/repositories/mongoose-project.repository';
+import {
+  ProjectSchema,
+  ProjectMongooseSchema,
+} from './infrastructure/adapters/outbound/persistence/mongoose/schemas/project.schema';
 
 // Infrastructure adapters (inbound)
 import { ProjectsController } from './infrastructure/adapters/inbound/rest/projects.controller';
@@ -53,12 +63,41 @@ export class ProjectsModule {
   }
 
   static forRoot(): DynamicModule {
+    const configService = new ConfigService();
+    const strategy =
+      configService.get('PROJECTS_DATABASE_STRATEGY') ||
+      configService.get('DATABASE_STRATEGY') ||
+      'typeorm';
+
+    const imports: any[] = [ConfigModule.forFeature(projectsConfig)];
+    const repoProviders: Provider[] = [];
+
+    if (strategy === 'mongoose') {
+      imports.push(
+        MongooseModule.forFeature([
+          { name: ProjectSchema.name, schema: ProjectMongooseSchema },
+        ]),
+      );
+      repoProviders.push({
+        provide: ProjectRepositoryPort,
+        useClass: MongooseProjectRepository,
+      });
+    } else if (strategy === 'inmemory') {
+      repoProviders.push({
+        provide: ProjectRepositoryPort,
+        useClass: InMemoryProjectRepository,
+      });
+    } else {
+      imports.push(TypeOrmModule.forFeature([ProjectOrm]));
+      repoProviders.push({
+        provide: ProjectRepositoryPort,
+        useClass: TypeOrmProjectRepository,
+      });
+    }
+
     return {
       module: ProjectsModule,
-      imports: [
-        ConfigModule.forFeature(projectsConfig),
-        TypeOrmModule.forFeature([ProjectOrm]),
-      ],
+      imports,
       providers: [
         // Domain services
         ProjectSortingService,
@@ -72,10 +111,7 @@ export class ProjectsModule {
         },
 
         // Outbound adapters (repositories)
-        {
-          provide: ProjectRepositoryPort,
-          useClass: TypeOrmProjectRepository,
-        },
+        ...repoProviders,
 
         // Mappers
         ProjectMapper,

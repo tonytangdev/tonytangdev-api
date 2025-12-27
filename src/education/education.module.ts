@@ -1,6 +1,7 @@
-import { Module, DynamicModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, DynamicModule, Provider } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import educationConfig from './education.config';
 
 // Domain services
@@ -19,10 +20,19 @@ import { GetEducationService } from './application/services/get-education.servic
 import { GetHighlightedEducationService } from './application/services/get-highlighted-education.service';
 import { GetInProgressEducationService } from './application/services/get-in-progress-education.service';
 
-// Infrastructure adapters (outbound)
+// Infrastructure adapters (outbound) - In-Memory
 import { InMemoryEducationRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-education.repository';
+
+// Infrastructure adapters (outbound) - TypeORM
 import { TypeOrmEducationRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-education.repository';
 import { EducationOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/education.entity.orm';
+
+// Infrastructure adapters (outbound) - Mongoose
+import { MongooseEducationRepository } from './infrastructure/adapters/outbound/persistence/mongoose/repositories/mongoose-education.repository';
+import {
+  EducationSchema,
+  EducationMongooseSchema,
+} from './infrastructure/adapters/outbound/persistence/mongoose/schemas/education.schema';
 
 // Infrastructure adapters (inbound)
 import { EducationController } from './infrastructure/adapters/inbound/rest/education.controller';
@@ -56,12 +66,41 @@ export class EducationModule {
   }
 
   static forRoot(): DynamicModule {
+    const configService = new ConfigService();
+    const strategy =
+      configService.get('EDUCATION_DATABASE_STRATEGY') ||
+      configService.get('DATABASE_STRATEGY') ||
+      'typeorm';
+
+    const imports: any[] = [ConfigModule.forFeature(educationConfig)];
+    const repoProviders: Provider[] = [];
+
+    if (strategy === 'mongoose') {
+      imports.push(
+        MongooseModule.forFeature([
+          { name: EducationSchema.name, schema: EducationMongooseSchema },
+        ]),
+      );
+      repoProviders.push({
+        provide: EducationRepositoryPort,
+        useClass: MongooseEducationRepository,
+      });
+    } else if (strategy === 'inmemory') {
+      repoProviders.push({
+        provide: EducationRepositoryPort,
+        useClass: InMemoryEducationRepository,
+      });
+    } else {
+      imports.push(TypeOrmModule.forFeature([EducationOrm]));
+      repoProviders.push({
+        provide: EducationRepositoryPort,
+        useClass: TypeOrmEducationRepository,
+      });
+    }
+
     return {
       module: EducationModule,
-      imports: [
-        ConfigModule.forFeature(educationConfig),
-        TypeOrmModule.forFeature([EducationOrm]),
-      ],
+      imports,
       providers: [
         // Domain services
         EducationSortingService,
@@ -78,10 +117,7 @@ export class EducationModule {
         },
 
         // Outbound adapters (repositories)
-        {
-          provide: EducationRepositoryPort,
-          useClass: TypeOrmEducationRepository,
-        },
+        ...repoProviders,
 
         // Mappers
         EducationMapper,

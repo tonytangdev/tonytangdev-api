@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
@@ -16,6 +17,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         entities: [__dirname + '/../**/*.entity.orm{.ts,.js}'],
         synchronize: configService.get<boolean>('DATABASE_SYNCHRONIZE'),
         logging: configService.get<boolean>('DATABASE_LOGGING'),
+      }),
+      inject: [ConfigService],
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        uri: configService.get('MONGODB_URI'),
+        dbName: configService.get('MONGODB_DATABASE'),
       }),
       inject: [ConfigService],
     }),

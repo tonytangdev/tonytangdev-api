@@ -33,11 +33,22 @@ $ pnpm install
 
 ## Database setup
 
-Start PostgreSQL:
+This project supports multiple database strategies: **PostgreSQL (TypeORM)**, **MongoDB (Mongoose)**, and **In-Memory**. Each module can independently choose its database strategy via environment variables.
+
+### Start Databases
 
 ```bash
+# Start PostgreSQL only
+$ docker-compose up -d postgres
+
+# Start MongoDB only
+$ docker-compose up -d mongodb
+
+# Start both databases
 $ docker-compose up -d
 ```
+
+### PostgreSQL Configuration
 
 Environment vars in `.env`:
 - `DATABASE_HOST` - PostgreSQL host (default: localhost)
@@ -47,6 +58,52 @@ Environment vars in `.env`:
 - `DATABASE_PASSWORD` - Database password (default: postgres)
 - `DATABASE_SYNCHRONIZE` - Auto-sync schema (default: true, set false in prod)
 - `DATABASE_LOGGING` - Enable query logging (default: false)
+
+### MongoDB Configuration
+
+Environment vars in `.env`:
+- `MONGODB_URI` - MongoDB connection URI (default: mongodb://localhost:27017)
+- `MONGODB_DATABASE` - MongoDB database name (default: tonytangdev)
+- `MONGODB_PORT` - MongoDB port (default: 27017)
+
+### Database Strategy Selection
+
+You can choose database strategy globally or per-module:
+
+```bash
+# Global default strategy (applied to all modules unless overridden)
+DATABASE_STRATEGY=typeorm  # Options: typeorm, mongoose, inmemory
+
+# Per-module strategy overrides (optional)
+SKILLS_DATABASE_STRATEGY=mongoose
+PROJECTS_DATABASE_STRATEGY=typeorm
+EXPERIENCES_DATABASE_STRATEGY=mongoose
+EDUCATION_DATABASE_STRATEGY=typeorm
+LANGUAGES_DATABASE_STRATEGY=mongoose
+PROFILE_DATABASE_STRATEGY=typeorm
+REFACTORINGS_DATABASE_STRATEGY=mongoose
+```
+
+**Examples:**
+
+- All modules use PostgreSQL:
+  ```bash
+  DATABASE_STRATEGY=typeorm
+  ```
+
+- All modules use MongoDB:
+  ```bash
+  DATABASE_STRATEGY=mongoose
+  ```
+
+- Mixed strategies (Skills & Experiences use MongoDB, others use PostgreSQL):
+  ```bash
+  DATABASE_STRATEGY=typeorm
+  SKILLS_DATABASE_STRATEGY=mongoose
+  EXPERIENCES_DATABASE_STRATEGY=mongoose
+  ```
+
+**Note:** Tests always use in-memory strategy regardless of configuration.
 
 ## Compile and run the project
 

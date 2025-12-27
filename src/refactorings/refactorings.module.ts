@@ -1,6 +1,7 @@
-import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import refactoringsConfig from './refactorings.config';
 import { GetRefactoringShowcasesUseCase } from './application/ports/inbound/get-refactoring-showcases.use-case';
 import { GetRefactoringShowcaseByIdUseCase } from './application/ports/inbound/get-refactoring-showcase-by-id.use-case';
@@ -14,6 +15,11 @@ import { TypeOrmRefactoringShowcaseRepository } from './infrastructure/adapters/
 import { RefactoringShowcaseOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/refactoring-showcase.entity.orm';
 import { RefactoringStepOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/refactoring-step.entity.orm';
 import { RefactoringFileOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/refactoring-file.entity.orm';
+import { MongooseRefactoringShowcaseRepository } from './infrastructure/adapters/outbound/persistence/mongoose/repositories/mongoose-refactoring-showcase.repository';
+import {
+  RefactoringShowcaseSchema,
+  RefactoringShowcaseMongooseSchema,
+} from './infrastructure/adapters/outbound/persistence/mongoose/schemas/refactoring-showcase.schema';
 import { RefactoringShowcaseMapper } from './infrastructure/adapters/inbound/mappers/refactoring-showcase.mapper';
 import { RefactoringsController } from './infrastructure/adapters/inbound/rest/refactorings.controller';
 
@@ -47,16 +53,50 @@ export class RefactoringsModule {
   }
 
   static forRoot(): DynamicModule {
-    return {
-      module: RefactoringsModule,
-      imports: [
-        ConfigModule.forFeature(refactoringsConfig),
+    const configService = new ConfigService();
+    const strategy =
+      configService.get('REFACTORINGS_DATABASE_STRATEGY') ||
+      configService.get('DATABASE_STRATEGY') ||
+      'typeorm';
+
+    const imports: any[] = [ConfigModule.forFeature(refactoringsConfig)];
+    const repoProviders: Provider[] = [];
+
+    if (strategy === 'mongoose') {
+      imports.push(
+        MongooseModule.forFeature([
+          {
+            name: RefactoringShowcaseSchema.name,
+            schema: RefactoringShowcaseMongooseSchema,
+          },
+        ]),
+      );
+      repoProviders.push({
+        provide: RefactoringShowcaseRepositoryPort,
+        useClass: MongooseRefactoringShowcaseRepository,
+      });
+    } else if (strategy === 'inmemory') {
+      repoProviders.push({
+        provide: RefactoringShowcaseRepositoryPort,
+        useClass: InMemoryRefactoringShowcaseRepository,
+      });
+    } else {
+      imports.push(
         TypeOrmModule.forFeature([
           RefactoringShowcaseOrm,
           RefactoringStepOrm,
           RefactoringFileOrm,
         ]),
-      ],
+      );
+      repoProviders.push({
+        provide: RefactoringShowcaseRepositoryPort,
+        useClass: TypeOrmRefactoringShowcaseRepository,
+      });
+    }
+
+    return {
+      module: RefactoringsModule,
+      imports,
       providers: [
         {
           provide: GetRefactoringShowcasesUseCase,
@@ -70,10 +110,7 @@ export class RefactoringsModule {
           provide: GetHighlightedRefactoringShowcasesUseCase,
           useClass: GetHighlightedRefactoringShowcasesService,
         },
-        {
-          provide: RefactoringShowcaseRepositoryPort,
-          useClass: TypeOrmRefactoringShowcaseRepository,
-        },
+        ...repoProviders,
         RefactoringShowcaseMapper,
       ],
       controllers: [RefactoringsController],

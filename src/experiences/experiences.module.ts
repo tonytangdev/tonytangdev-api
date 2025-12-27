@@ -1,6 +1,7 @@
-import { Module, DynamicModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, DynamicModule, Provider } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import experiencesConfig from './experiences.config';
 
 // Domain services
@@ -19,10 +20,19 @@ import { GetExperiencesService } from './application/services/get-experiences.se
 import { GetHighlightedExperiencesService } from './application/services/get-highlighted-experiences.service';
 import { GetCurrentExperienceService } from './application/services/get-current-experience.service';
 
-// Infrastructure adapters (outbound)
+// Infrastructure adapters (outbound) - In-Memory
 import { InMemoryExperienceRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-experience.repository';
+
+// Infrastructure adapters (outbound) - TypeORM
 import { TypeOrmExperienceRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-experience.repository';
 import { ExperienceOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/experience.entity.orm';
+
+// Infrastructure adapters (outbound) - Mongoose
+import { MongooseExperienceRepository } from './infrastructure/adapters/outbound/persistence/mongoose/repositories/mongoose-experience.repository';
+import {
+  ExperienceSchema,
+  ExperienceMongooseSchema,
+} from './infrastructure/adapters/outbound/persistence/mongoose/schemas/experience.schema';
 
 // Infrastructure adapters (inbound)
 import { ExperiencesController } from './infrastructure/adapters/inbound/rest/experiences.controller';
@@ -56,12 +66,41 @@ export class ExperiencesModule {
   }
 
   static forRoot(): DynamicModule {
+    const configService = new ConfigService();
+    const strategy =
+      configService.get('EXPERIENCES_DATABASE_STRATEGY') ||
+      configService.get('DATABASE_STRATEGY') ||
+      'typeorm';
+
+    const imports: any[] = [ConfigModule.forFeature(experiencesConfig)];
+    const repoProviders: Provider[] = [];
+
+    if (strategy === 'mongoose') {
+      imports.push(
+        MongooseModule.forFeature([
+          { name: ExperienceSchema.name, schema: ExperienceMongooseSchema },
+        ]),
+      );
+      repoProviders.push({
+        provide: ExperienceRepositoryPort,
+        useClass: MongooseExperienceRepository,
+      });
+    } else if (strategy === 'inmemory') {
+      repoProviders.push({
+        provide: ExperienceRepositoryPort,
+        useClass: InMemoryExperienceRepository,
+      });
+    } else {
+      imports.push(TypeOrmModule.forFeature([ExperienceOrm]));
+      repoProviders.push({
+        provide: ExperienceRepositoryPort,
+        useClass: TypeOrmExperienceRepository,
+      });
+    }
+
     return {
       module: ExperiencesModule,
-      imports: [
-        ConfigModule.forFeature(experiencesConfig),
-        TypeOrmModule.forFeature([ExperienceOrm]),
-      ],
+      imports,
       providers: [
         // Domain services
         ExperienceSortingService,
@@ -78,10 +117,7 @@ export class ExperiencesModule {
         },
 
         // Outbound adapters (repositories)
-        {
-          provide: ExperienceRepositoryPort,
-          useClass: TypeOrmExperienceRepository,
-        },
+        ...repoProviders,
 
         // Mappers
         ExperienceMapper,

@@ -1,6 +1,7 @@
-import { Module, DynamicModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, DynamicModule, Provider } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import profileConfig from './profile.config';
 
 // Application ports (inbound)
@@ -12,11 +13,20 @@ import { ProfileRepositoryPort } from './application/ports/outbound/profile.repo
 // Application services
 import { GetProfileService } from './application/services/get-profile.service';
 
-// Infrastructure adapters (outbound)
+// Infrastructure adapters (outbound) - In-Memory
 import { InMemoryProfileRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-profile.repository';
+
+// Infrastructure adapters (outbound) - TypeORM
 import { TypeOrmProfileRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-profile.repository';
 import { ProfileOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/profile.entity.orm';
 import { SocialLinkOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/social-link.entity.orm';
+
+// Infrastructure adapters (outbound) - Mongoose
+import { MongooseProfileRepository } from './infrastructure/adapters/outbound/persistence/mongoose/repositories/mongoose-profile.repository';
+import {
+  ProfileSchema,
+  ProfileMongooseSchema,
+} from './infrastructure/adapters/outbound/persistence/mongoose/schemas/profile.schema';
 
 // Infrastructure adapters (inbound)
 import { ProfileController } from './infrastructure/adapters/inbound/rest/profile.controller';
@@ -41,21 +51,47 @@ export class ProfileModule {
   }
 
   static forRoot(): DynamicModule {
+    const configService = new ConfigService();
+    const strategy =
+      configService.get('PROFILE_DATABASE_STRATEGY') ||
+      configService.get('DATABASE_STRATEGY') ||
+      'typeorm';
+
+    const imports: any[] = [ConfigModule.forFeature(profileConfig)];
+    const repoProviders: Provider[] = [];
+
+    if (strategy === 'mongoose') {
+      imports.push(
+        MongooseModule.forFeature([
+          { name: ProfileSchema.name, schema: ProfileMongooseSchema },
+        ]),
+      );
+      repoProviders.push({
+        provide: ProfileRepositoryPort,
+        useClass: MongooseProfileRepository,
+      });
+    } else if (strategy === 'inmemory') {
+      repoProviders.push({
+        provide: ProfileRepositoryPort,
+        useClass: InMemoryProfileRepository,
+      });
+    } else {
+      imports.push(TypeOrmModule.forFeature([ProfileOrm, SocialLinkOrm]));
+      repoProviders.push({
+        provide: ProfileRepositoryPort,
+        useClass: TypeOrmProfileRepository,
+      });
+    }
+
     return {
       module: ProfileModule,
-      imports: [
-        ConfigModule.forFeature(profileConfig),
-        TypeOrmModule.forFeature([ProfileOrm, SocialLinkOrm]),
-      ],
+      imports,
       providers: [
         // Application services (use cases) - bind abstract to concrete
         { provide: GetProfileUseCase, useClass: GetProfileService },
 
         // Outbound adapters (repositories)
-        {
-          provide: ProfileRepositoryPort,
-          useClass: TypeOrmProfileRepository,
-        },
+        ...repoProviders,
 
         // Mappers
         ProfileMapper,

@@ -1,6 +1,7 @@
-import { Module, DynamicModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, DynamicModule, Provider } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import skillsConfig from './skills.config';
 
 // Domain services
@@ -20,13 +21,27 @@ import { GetSkillsService } from './application/services/get-skills.service';
 import { GetSkillsByCategoryService } from './application/services/get-skills-by-category.service';
 import { GetHighlightedSkillsService } from './application/services/get-highlighted-skills.service';
 
-// Infrastructure adapters (outbound)
+// Infrastructure adapters (outbound) - In-Memory
 import { InMemorySkillRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-skill.repository';
 import { InMemorySkillCategoryRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-skill-category.repository';
+
+// Infrastructure adapters (outbound) - TypeORM
 import { TypeOrmSkillRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-skill.repository';
 import { TypeOrmSkillCategoryRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-skill-category.repository';
 import { SkillOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/skill.entity.orm';
 import { SkillCategoryOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/skill-category.entity.orm';
+
+// Infrastructure adapters (outbound) - Mongoose
+import { MongooseSkillRepository } from './infrastructure/adapters/outbound/persistence/mongoose/repositories/mongoose-skill.repository';
+import { MongooseSkillCategoryRepository } from './infrastructure/adapters/outbound/persistence/mongoose/repositories/mongoose-skill-category.repository';
+import {
+  SkillSchema,
+  SkillMongooseSchema,
+} from './infrastructure/adapters/outbound/persistence/mongoose/schemas/skill.schema';
+import {
+  SkillCategorySchema,
+  SkillCategoryMongooseSchema,
+} from './infrastructure/adapters/outbound/persistence/mongoose/schemas/skill-category.schema';
 
 // Infrastructure adapters (inbound)
 import { SkillsController } from './infrastructure/adapters/inbound/rest/skills.controller';
@@ -61,12 +76,54 @@ export class SkillsModule {
   }
 
   static forRoot(): DynamicModule {
+    const configService = new ConfigService();
+    const strategy =
+      configService.get('SKILLS_DATABASE_STRATEGY') ||
+      configService.get('DATABASE_STRATEGY') ||
+      'typeorm';
+
+    const imports: any[] = [ConfigModule.forFeature(skillsConfig)];
+    const repoProviders: Provider[] = [];
+
+    if (strategy === 'mongoose') {
+      imports.push(
+        MongooseModule.forFeature([
+          { name: SkillSchema.name, schema: SkillMongooseSchema },
+          {
+            name: SkillCategorySchema.name,
+            schema: SkillCategoryMongooseSchema,
+          },
+        ]),
+      );
+      repoProviders.push(
+        { provide: SkillRepositoryPort, useClass: MongooseSkillRepository },
+        {
+          provide: SkillCategoryRepositoryPort,
+          useClass: MongooseSkillCategoryRepository,
+        },
+      );
+    } else if (strategy === 'inmemory') {
+      repoProviders.push(
+        { provide: SkillRepositoryPort, useClass: InMemorySkillRepository },
+        {
+          provide: SkillCategoryRepositoryPort,
+          useClass: InMemorySkillCategoryRepository,
+        },
+      );
+    } else {
+      imports.push(TypeOrmModule.forFeature([SkillOrm, SkillCategoryOrm]));
+      repoProviders.push(
+        { provide: SkillRepositoryPort, useClass: TypeOrmSkillRepository },
+        {
+          provide: SkillCategoryRepositoryPort,
+          useClass: TypeOrmSkillCategoryRepository,
+        },
+      );
+    }
+
     return {
       module: SkillsModule,
-      imports: [
-        ConfigModule.forFeature(skillsConfig),
-        TypeOrmModule.forFeature([SkillOrm, SkillCategoryOrm]),
-      ],
+      imports,
       providers: [
         // Domain services
         SkillGroupingService,
@@ -83,11 +140,7 @@ export class SkillsModule {
         },
 
         // Outbound adapters (repositories)
-        { provide: SkillRepositoryPort, useClass: TypeOrmSkillRepository },
-        {
-          provide: SkillCategoryRepositoryPort,
-          useClass: TypeOrmSkillCategoryRepository,
-        },
+        ...repoProviders,
 
         // Mappers
         SkillMapper,
