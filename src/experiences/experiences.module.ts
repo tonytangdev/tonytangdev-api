@@ -67,12 +67,14 @@ export class ExperiencesModule {
 
   static forRoot(): DynamicModule {
     const configService = new ConfigService();
-    const strategy =
+    const strategy: string =
       configService.get('EXPERIENCES_DATABASE_STRATEGY') ||
       configService.get('DATABASE_STRATEGY') ||
       'typeorm';
 
-    const imports: any[] = [ConfigModule.forFeature(experiencesConfig)];
+    const imports: DynamicModule[] = [
+      ConfigModule.forFeature(experiencesConfig),
+    ];
     const repoProviders: Provider[] = [];
 
     if (strategy === 'mongoose') {

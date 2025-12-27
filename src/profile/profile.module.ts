@@ -52,12 +52,12 @@ export class ProfileModule {
 
   static forRoot(): DynamicModule {
     const configService = new ConfigService();
-    const strategy =
+    const strategy: string =
       configService.get('PROFILE_DATABASE_STRATEGY') ||
       configService.get('DATABASE_STRATEGY') ||
       'typeorm';
 
-    const imports: any[] = [ConfigModule.forFeature(profileConfig)];
+    const imports: DynamicModule[] = [ConfigModule.forFeature(profileConfig)];
     const repoProviders: Provider[] = [];
 
     if (strategy === 'mongoose') {

@@ -67,12 +67,12 @@ export class EducationModule {
 
   static forRoot(): DynamicModule {
     const configService = new ConfigService();
-    const strategy =
+    const strategy: string =
       configService.get('EDUCATION_DATABASE_STRATEGY') ||
       configService.get('DATABASE_STRATEGY') ||
       'typeorm';
 
-    const imports: any[] = [ConfigModule.forFeature(educationConfig)];
+    const imports: DynamicModule[] = [ConfigModule.forFeature(educationConfig)];
     const repoProviders: Provider[] = [];
 
     if (strategy === 'mongoose') {

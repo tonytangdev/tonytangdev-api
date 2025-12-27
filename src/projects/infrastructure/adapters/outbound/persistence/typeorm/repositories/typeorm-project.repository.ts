@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ProjectRepositoryPort } from '../../../../../../application/ports/outbound/project.repository.port';
 import { Project } from '../../../../../../domain/entities/project.entity';
 import { ProjectOrm } from '../entities/project.entity.orm';

@@ -64,12 +64,12 @@ export class ProjectsModule {
 
   static forRoot(): DynamicModule {
     const configService = new ConfigService();
-    const strategy =
+    const strategy: string =
       configService.get('PROJECTS_DATABASE_STRATEGY') ||
       configService.get('DATABASE_STRATEGY') ||
       'typeorm';
 
-    const imports: any[] = [ConfigModule.forFeature(projectsConfig)];
+    const imports: DynamicModule[] = [ConfigModule.forFeature(projectsConfig)];
     const repoProviders: Provider[] = [];
 
     if (strategy === 'mongoose') {

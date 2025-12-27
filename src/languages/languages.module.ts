@@ -63,12 +63,12 @@ export class LanguagesModule {
 
   static forRoot(): DynamicModule {
     const configService = new ConfigService();
-    const strategy =
+    const strategy: string =
       configService.get('LANGUAGES_DATABASE_STRATEGY') ||
       configService.get('DATABASE_STRATEGY') ||
       'typeorm';
 
-    const imports: any[] = [ConfigModule.forFeature(languagesConfig)];
+    const imports: DynamicModule[] = [ConfigModule.forFeature(languagesConfig)];
     const repoProviders: Provider[] = [];
 
     if (strategy === 'mongoose') {

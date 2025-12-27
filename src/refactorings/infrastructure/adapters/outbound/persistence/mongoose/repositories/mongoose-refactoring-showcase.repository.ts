@@ -32,7 +32,7 @@ export class MongooseRefactoringShowcaseRepository extends RefactoringShowcaseRe
     const limit = pagination?.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (filters?.difficulty) {
       query.difficulty = filters.difficulty;

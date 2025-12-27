@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { Request, Response } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -40,7 +41,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs-json', app, document);
 
   // Scalar UI at /api/docs
-  app.use('/api/docs', (req, res) => {
+  app.use('/api/docs', (_req: Request, res: Response) => {
     res.send(`
       <!doctype html>
       <html>

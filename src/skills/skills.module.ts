@@ -77,12 +77,12 @@ export class SkillsModule {
 
   static forRoot(): DynamicModule {
     const configService = new ConfigService();
-    const strategy =
+    const strategy: string =
       configService.get('SKILLS_DATABASE_STRATEGY') ||
       configService.get('DATABASE_STRATEGY') ||
       'typeorm';
 
-    const imports: any[] = [ConfigModule.forFeature(skillsConfig)];
+    const imports: DynamicModule[] = [ConfigModule.forFeature(skillsConfig)];
     const repoProviders: Provider[] = [];
 
     if (strategy === 'mongoose') {
