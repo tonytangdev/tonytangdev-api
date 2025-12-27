@@ -173,6 +173,184 @@ describe('Profile API (e2e)', () => {
     });
   });
 
+  describe('POST /api/v1/profile', () => {
+    const validApiKey = 'test-api-key';
+
+    const validProfileData = {
+      fullName: 'Jane Doe',
+      title: 'Full Stack Engineer',
+      bio: 'Expert developer with passion for clean code',
+      email: 'jane@example.com',
+      location: 'New York, NY',
+      timezone: 'America/New_York',
+      availability: 'available',
+      yearsOfExperience: 5,
+      socialLinks: [
+        {
+          platform: 'github',
+          url: 'https://github.com/janedoe',
+          username: 'janedoe',
+        },
+      ],
+    };
+
+    it('should reject request without API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .send(validProfileData)
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject request with invalid API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', 'wrong-key')
+        .send(validProfileData)
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject profile creation when profile already exists', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send(validProfileData)
+        .expect(409)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 409);
+          expect(res.body.message).toContain('Profile already exists');
+        });
+    });
+
+    it('should reject invalid email', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          ...validProfileData,
+          email: 'invalid-email',
+        })
+        .expect(400);
+    });
+
+    it('should reject invalid timezone', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          ...validProfileData,
+          timezone: 'Invalid/Timezone',
+        })
+        .expect(400);
+    });
+
+    it('should reject invalid availability status', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          ...validProfileData,
+          availability: 'invalid-status',
+        })
+        .expect(400);
+    });
+
+    it('should reject invalid social platform', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          ...validProfileData,
+          socialLinks: [
+            {
+              platform: 'invalid-platform',
+              url: 'https://example.com',
+              username: 'user',
+            },
+          ],
+        })
+        .expect(400);
+    });
+
+    it('should reject invalid URL in social link', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          ...validProfileData,
+          socialLinks: [
+            {
+              platform: 'github',
+              url: 'not-a-url',
+              username: 'user',
+            },
+          ],
+        })
+        .expect(400);
+    });
+
+    it('should reject invalid profilePictureUrl', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          ...validProfileData,
+          profilePictureUrl: 'not-a-url',
+        })
+        .expect(400);
+    });
+
+    it('should reject invalid resumeUrl', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          ...validProfileData,
+          resumeUrl: 'not-a-url',
+        })
+        .expect(400);
+    });
+
+    it('should reject missing required fields', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          fullName: 'John Doe',
+        })
+        .expect(400);
+    });
+
+    it('should reject yearsOfExperience below 0', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          ...validProfileData,
+          yearsOfExperience: -1,
+        })
+        .expect(400);
+    });
+
+    it('should reject yearsOfExperience above 100', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          ...validProfileData,
+          yearsOfExperience: 101,
+        })
+        .expect(400);
+    });
+  });
+
   describe('Response format consistency', () => {
     it('should return data and meta', () => {
       return request(app.getHttpServer())

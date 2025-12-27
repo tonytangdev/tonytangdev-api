@@ -5,6 +5,7 @@ import { ProfileRepositoryPort } from '../../../../../../application/ports/outbo
 import { Profile } from '../../../../../../domain/entities/profile.entity';
 import { SocialLink } from '../../../../../../domain/entities/social-link.entity';
 import { ProfileOrm } from '../entities/profile.entity.orm';
+import { SocialLinkOrm } from '../entities/social-link.entity.orm';
 
 @Injectable()
 export class TypeOrmProfileRepository extends ProfileRepositoryPort {
@@ -21,6 +22,34 @@ export class TypeOrmProfileRepository extends ProfileRepositoryPort {
       relations: ['socialLinks'],
     });
     return profile ? this.toDomain(profile) : null;
+  }
+
+  async create(profile: Profile): Promise<Profile> {
+    const profileOrm = new ProfileOrm();
+    profileOrm.id = profile.id;
+    profileOrm.fullName = profile.fullName;
+    profileOrm.title = profile.title;
+    profileOrm.bio = profile.bio;
+    profileOrm.email = profile.email;
+    profileOrm.phone = profile.phone;
+    profileOrm.location = profile.location;
+    profileOrm.timezone = profile.timezone;
+    profileOrm.availability = profile.availability;
+    profileOrm.yearsOfExperience = profile.yearsOfExperience;
+    profileOrm.profilePictureUrl = profile.profilePictureUrl;
+    profileOrm.resumeUrl = profile.resumeUrl;
+
+    profileOrm.socialLinks = profile.socialLinks.map((link) => {
+      const linkOrm = new SocialLinkOrm();
+      linkOrm.platform = link.platform;
+      linkOrm.url = link.url;
+      linkOrm.username = link.username;
+      linkOrm.profileId = profile.id;
+      return linkOrm;
+    });
+
+    const saved = await this.repository.save(profileOrm);
+    return this.toDomain(saved);
   }
 
   private toDomain(orm: ProfileOrm): Profile {

@@ -10,4 +10,9 @@ export class InMemoryProfileRepository extends ProfileRepositoryPort {
   async findProfile(): Promise<Profile | null> {
     return Promise.resolve(this.profile);
   }
+
+  async create(profile: Profile): Promise<Profile> {
+    this.profile = profile;
+    return Promise.resolve(profile);
+  }
 }

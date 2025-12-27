@@ -21,6 +21,29 @@ export class MongooseProfileRepository extends ProfileRepositoryPort {
     return this.toDomain(doc);
   }
 
+  async create(profile: Profile): Promise<Profile> {
+    const doc = await this.model.create({
+      _id: profile.id,
+      fullName: profile.fullName,
+      title: profile.title,
+      bio: profile.bio,
+      email: profile.email,
+      phone: profile.phone,
+      location: profile.location,
+      timezone: profile.timezone,
+      availability: profile.availability,
+      yearsOfExperience: profile.yearsOfExperience,
+      profilePictureUrl: profile.profilePictureUrl,
+      resumeUrl: profile.resumeUrl,
+      socialLinks: profile.socialLinks.map((link) => ({
+        platform: link.platform,
+        url: link.url,
+        username: link.username,
+      })),
+    });
+    return this.toDomain(doc);
+  }
+
   private toDomain(doc: ProfileDocument): Profile {
     return new Profile({
       id: doc._id,

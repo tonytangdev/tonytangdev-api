@@ -6,12 +6,14 @@ import profileConfig from './profile.config';
 
 // Application ports (inbound)
 import { GetProfileUseCase } from './application/ports/inbound/get-profile.use-case';
+import { CreateProfileUseCase } from './application/ports/inbound/create-profile.use-case';
 
 // Application ports (outbound)
 import { ProfileRepositoryPort } from './application/ports/outbound/profile.repository.port';
 
 // Application services
 import { GetProfileService } from './application/services/get-profile.service';
+import { CreateProfileService } from './application/services/create-profile.service';
 
 // Infrastructure adapters (outbound) - In-Memory
 import { InMemoryProfileRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-profile.repository';
@@ -40,6 +42,7 @@ export class ProfileModule {
       imports: [ConfigModule.forFeature(profileConfig)],
       providers: [
         { provide: GetProfileUseCase, useClass: GetProfileService },
+        { provide: CreateProfileUseCase, useClass: CreateProfileService },
         {
           provide: ProfileRepositoryPort,
           useClass: InMemoryProfileRepository,
@@ -89,6 +92,7 @@ export class ProfileModule {
       providers: [
         // Application services (use cases) - bind abstract to concrete
         { provide: GetProfileUseCase, useClass: GetProfileService },
+        { provide: CreateProfileUseCase, useClass: CreateProfileService },
 
         // Outbound adapters (repositories)
         ...repoProviders,
