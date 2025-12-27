@@ -1,9 +1,18 @@
 import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiNotFoundResponse,
+} from '@nestjs/swagger';
 import { GetProjectsUseCase } from '../../../../application/ports/inbound/get-projects.use-case';
 import { GetProjectByIdUseCase } from '../../../../application/ports/inbound/get-project-by-id.use-case';
 import { GetProjectsByTechnologyUseCase } from '../../../../application/ports/inbound/get-projects-by-technology.use-case';
 import { ProjectMapper } from '../mappers/project.mapper';
+import { ProjectResponseDto } from './dto/project-response.dto';
 
+@ApiTags('projects')
 @Controller('projects')
 export class ProjectsController {
   constructor(
@@ -14,6 +23,8 @@ export class ProjectsController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get all projects' })
+  @ApiResponse({ status: 200, description: 'Projects retrieved successfully', type: [ProjectResponseDto] })
   async getProjects() {
     const projects = await this.getProjectsUseCase.execute();
     const data = this.projectMapper.toDtoList(projects);
@@ -25,6 +36,9 @@ export class ProjectsController {
   }
 
   @Get('technologies/:slug')
+  @ApiOperation({ summary: 'Get projects by technology slug' })
+  @ApiParam({ name: 'slug', description: 'Technology slug' })
+  @ApiResponse({ status: 200, description: 'Projects for technology retrieved successfully', type: [ProjectResponseDto] })
   async getProjectsByTechnology(@Param('slug') slug: string) {
     const projects = await this.getProjectsByTechnologyUseCase.execute(slug);
     const data = this.projectMapper.toDtoList(projects);
@@ -36,6 +50,10 @@ export class ProjectsController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get project by ID' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Project retrieved successfully', type: ProjectResponseDto })
+  @ApiNotFoundResponse({ description: 'Project not found' })
   async getProjectById(@Param('id') id: string) {
     const project = await this.getProjectByIdUseCase.execute(id);
 

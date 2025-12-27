@@ -1,9 +1,17 @@
 import { Controller, Get, NotFoundException } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiNotFoundResponse,
+} from '@nestjs/swagger';
 import { GetExperiencesUseCase } from '../../../../application/ports/inbound/get-experiences.use-case';
 import { GetHighlightedExperiencesUseCase } from '../../../../application/ports/inbound/get-highlighted-experiences.use-case';
 import { GetCurrentExperienceUseCase } from '../../../../application/ports/inbound/get-current-experience.use-case';
 import { ExperienceMapper } from '../mappers/experience.mapper';
+import { ExperienceResponseDto } from './dto/experience-response.dto';
 
+@ApiTags('experiences')
 @Controller('experiences')
 export class ExperiencesController {
   constructor(
@@ -14,6 +22,8 @@ export class ExperiencesController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get all work experiences' })
+  @ApiResponse({ status: 200, description: 'Experiences retrieved successfully', type: [ExperienceResponseDto] })
   async getExperiences() {
     const experiences = await this.getExperiencesUseCase.execute();
     const data = this.experienceMapper.toDtoList(experiences);
@@ -25,6 +35,8 @@ export class ExperiencesController {
   }
 
   @Get('highlighted')
+  @ApiOperation({ summary: 'Get highlighted experiences' })
+  @ApiResponse({ status: 200, description: 'Highlighted experiences retrieved successfully', type: [ExperienceResponseDto] })
   async getHighlightedExperiences() {
     const experiences = await this.getHighlightedExperiencesUseCase.execute();
     const data = this.experienceMapper.toDtoList(experiences);
@@ -36,6 +48,9 @@ export class ExperiencesController {
   }
 
   @Get('current')
+  @ApiOperation({ summary: 'Get current work experience' })
+  @ApiResponse({ status: 200, description: 'Current experience retrieved successfully', type: ExperienceResponseDto })
+  @ApiNotFoundResponse({ description: 'No current experience found' })
   async getCurrentExperience() {
     const experience = await this.getCurrentExperienceUseCase.execute();
 
