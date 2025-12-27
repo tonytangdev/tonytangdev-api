@@ -1,5 +1,6 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import experiencesConfig from './experiences.config';
 
 // Domain services
@@ -20,6 +21,8 @@ import { GetCurrentExperienceService } from './application/services/get-current-
 
 // Infrastructure adapters (outbound)
 import { InMemoryExperienceRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-experience.repository';
+import { TypeOrmExperienceRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-experience.repository';
+import { ExperienceOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/experience.entity.orm';
 
 // Infrastructure adapters (inbound)
 import { ExperiencesController } from './infrastructure/adapters/inbound/rest/experiences.controller';
@@ -27,10 +30,38 @@ import { ExperienceMapper } from './infrastructure/adapters/inbound/mappers/expe
 
 @Module({})
 export class ExperiencesModule {
-  static forRoot(): DynamicModule {
+  static forTest(): DynamicModule {
     return {
       module: ExperiencesModule,
       imports: [ConfigModule.forFeature(experiencesConfig)],
+      providers: [
+        ExperienceSortingService,
+        { provide: GetExperiencesUseCase, useClass: GetExperiencesService },
+        {
+          provide: GetHighlightedExperiencesUseCase,
+          useClass: GetHighlightedExperiencesService,
+        },
+        {
+          provide: GetCurrentExperienceUseCase,
+          useClass: GetCurrentExperienceService,
+        },
+        {
+          provide: ExperienceRepositoryPort,
+          useClass: InMemoryExperienceRepository,
+        },
+        ExperienceMapper,
+      ],
+      controllers: [ExperiencesController],
+    };
+  }
+
+  static forRoot(): DynamicModule {
+    return {
+      module: ExperiencesModule,
+      imports: [
+        ConfigModule.forFeature(experiencesConfig),
+        TypeOrmModule.forFeature([ExperienceOrm]),
+      ],
       providers: [
         // Domain services
         ExperienceSortingService,
@@ -49,7 +80,7 @@ export class ExperiencesModule {
         // Outbound adapters (repositories)
         {
           provide: ExperienceRepositoryPort,
-          useClass: InMemoryExperienceRepository,
+          useClass: TypeOrmExperienceRepository,
         },
 
         // Mappers

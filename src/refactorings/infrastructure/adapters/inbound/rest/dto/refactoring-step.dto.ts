@@ -17,6 +17,9 @@ export class RefactoringStepDto {
   @ApiProperty({ description: 'Step order' })
   order: number;
 
-  @ApiProperty({ description: 'Code files for this step', type: [RefactoringFileDto] })
+  @ApiProperty({
+    description: 'Code files for this step',
+    type: [RefactoringFileDto],
+  })
   files: RefactoringFileDto[];
 }

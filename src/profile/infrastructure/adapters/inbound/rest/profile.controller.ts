@@ -19,7 +19,11 @@ export class ProfileController {
 
   @Get()
   @ApiOperation({ summary: 'Get user profile' })
-  @ApiResponse({ status: 200, description: 'Profile retrieved successfully', type: ProfileResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile retrieved successfully',
+    type: ProfileResponseDto,
+  })
   @ApiNotFoundResponse({ description: 'Profile not found' })
   async getProfile() {
     const profile = await this.getProfileUseCase.execute();

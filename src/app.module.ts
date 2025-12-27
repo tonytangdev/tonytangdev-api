@@ -2,6 +2,7 @@ import { Module, DynamicModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { DatabaseModule } from './database/database.module';
 import { SkillsModule } from './skills/skills.module';
 import { ExperiencesModule } from './experiences/experiences.module';
 import { EducationModule } from './education/education.module';
@@ -37,6 +38,7 @@ export class AppModule {
       module: AppModule,
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
+        DatabaseModule,
         ...(skillsEnabled ? [SkillsModule.forRoot()] : []),
         ...(experiencesEnabled ? [ExperiencesModule.forRoot()] : []),
         ...(educationEnabled ? [EducationModule.forRoot()] : []),

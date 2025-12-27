@@ -10,7 +10,13 @@ export class LanguageResponseDto {
 
   @ApiProperty({
     description: 'Proficiency level',
-    enum: ['elementary', 'limited-working', 'professional-working', 'full-professional', 'native'],
+    enum: [
+      'elementary',
+      'limited-working',
+      'professional-working',
+      'full-professional',
+      'native',
+    ],
   })
   proficiency: LanguageProficiency;
 

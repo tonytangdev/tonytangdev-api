@@ -4,7 +4,10 @@ export class EducationResponseDto {
   @ApiProperty({ description: 'Unique identifier' })
   id: string;
 
-  @ApiProperty({ description: 'Educational institution', example: 'Stanford University' })
+  @ApiProperty({
+    description: 'Educational institution',
+    example: 'Stanford University',
+  })
   institution: string;
 
   @ApiProperty({ description: 'Degree type', example: 'Bachelor of Science' })
@@ -16,7 +19,11 @@ export class EducationResponseDto {
   @ApiProperty({ description: 'Start date', example: '2015-09-01' })
   startDate: string;
 
-  @ApiPropertyOptional({ description: 'End date', example: '2019-06-01', nullable: true })
+  @ApiPropertyOptional({
+    description: 'End date',
+    example: '2019-06-01',
+    nullable: true,
+  })
   endDate: string | null;
 
   @ApiProperty({ description: 'Description' })

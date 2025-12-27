@@ -32,13 +32,38 @@ export class RefactoringsController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all refactoring showcases with pagination and filtering' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
-  @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 10 })
-  @ApiQuery({ name: 'difficulty', required: false, description: 'Filter by difficulty level', enum: ['beginner', 'intermediate', 'advanced'] })
+  @ApiOperation({
+    summary: 'Get all refactoring showcases with pagination and filtering',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'difficulty',
+    required: false,
+    description: 'Filter by difficulty level',
+    enum: ['beginner', 'intermediate', 'advanced'],
+  })
   @ApiQuery({ name: 'tag', required: false, description: 'Filter by tag' })
-  @ApiQuery({ name: 'technology', required: false, description: 'Filter by technology' })
-  @ApiResponse({ status: 200, description: 'Refactoring showcases retrieved successfully', type: [RefactoringShowcaseListDto] })
+  @ApiQuery({
+    name: 'technology',
+    required: false,
+    description: 'Filter by technology',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Refactoring showcases retrieved successfully',
+    type: [RefactoringShowcaseListDto],
+  })
   async getRefactoringShowcases(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -77,7 +102,11 @@ export class RefactoringsController {
 
   @Get('highlighted')
   @ApiOperation({ summary: 'Get highlighted refactoring showcases' })
-  @ApiResponse({ status: 200, description: 'Highlighted refactoring showcases retrieved successfully', type: [RefactoringShowcaseListDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Highlighted refactoring showcases retrieved successfully',
+    type: [RefactoringShowcaseListDto],
+  })
   async getHighlightedRefactoringShowcases() {
     const showcases =
       await this.getHighlightedRefactoringShowcasesUseCase.execute();
@@ -92,7 +121,11 @@ export class RefactoringsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get refactoring showcase detail by ID' })
   @ApiParam({ name: 'id', description: 'Refactoring showcase ID' })
-  @ApiResponse({ status: 200, description: 'Refactoring showcase detail retrieved successfully', type: RefactoringShowcaseDetailDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Refactoring showcase detail retrieved successfully',
+    type: RefactoringShowcaseDetailDto,
+  })
   @ApiNotFoundResponse({ description: 'Refactoring showcase not found' })
   async getRefactoringShowcaseById(@Param('id') id: string) {
     const showcase = await this.getRefactoringShowcaseByIdUseCase.execute(id);

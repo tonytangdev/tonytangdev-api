@@ -18,7 +18,11 @@ export class EducationController {
 
   @Get()
   @ApiOperation({ summary: 'Get all education records' })
-  @ApiResponse({ status: 200, description: 'Education records retrieved successfully', type: [EducationResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Education records retrieved successfully',
+    type: [EducationResponseDto],
+  })
   async getEducation() {
     const educations = await this.getEducationUseCase.execute();
     const data = this.educationMapper.toDtoList(educations);
@@ -31,7 +35,11 @@ export class EducationController {
 
   @Get('highlighted')
   @ApiOperation({ summary: 'Get highlighted education records' })
-  @ApiResponse({ status: 200, description: 'Highlighted education records retrieved successfully', type: [EducationResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Highlighted education records retrieved successfully',
+    type: [EducationResponseDto],
+  })
   async getHighlightedEducation() {
     const educations = await this.getHighlightedEducationUseCase.execute();
     const data = this.educationMapper.toDtoList(educations);
@@ -44,7 +52,11 @@ export class EducationController {
 
   @Get('in-progress')
   @ApiOperation({ summary: 'Get ongoing education records' })
-  @ApiResponse({ status: 200, description: 'In-progress education records retrieved successfully', type: [EducationResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'In-progress education records retrieved successfully',
+    type: [EducationResponseDto],
+  })
   async getInProgressEducation() {
     const educations = await this.getInProgressEducationUseCase.execute();
     const data = this.educationMapper.toDtoList(educations);

@@ -25,7 +25,11 @@ export class SkillsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all skills grouped by category' })
-  @ApiResponse({ status: 200, description: 'Skills retrieved successfully', type: [SkillCategoryResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Skills retrieved successfully',
+    type: [SkillCategoryResponseDto],
+  })
   async getSkills() {
     const grouped = await this.getSkillsUseCase.execute();
     const data = this.skillMapper.toGroupedDto(grouped);
@@ -38,7 +42,11 @@ export class SkillsController {
 
   @Get('categories')
   @ApiOperation({ summary: 'Get all skill categories' })
-  @ApiResponse({ status: 200, description: 'Categories retrieved successfully', type: [SkillCategoryResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Categories retrieved successfully',
+    type: [SkillCategoryResponseDto],
+  })
   async getCategories() {
     const grouped = await this.getSkillsUseCase.execute();
     const data = this.skillMapper.toGroupedDto(grouped);
@@ -52,7 +60,11 @@ export class SkillsController {
   @Get('categories/:slug')
   @ApiOperation({ summary: 'Get skills by category slug' })
   @ApiParam({ name: 'slug', description: 'Category slug' })
-  @ApiResponse({ status: 200, description: 'Skills for category retrieved successfully', type: SkillCategoryResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Skills for category retrieved successfully',
+    type: SkillCategoryResponseDto,
+  })
   @ApiNotFoundResponse({ description: 'Category not found' })
   async getSkillsByCategory(@Param('slug') slug: string) {
     const result = await this.getSkillsByCategoryUseCase.execute(slug);
@@ -74,7 +86,11 @@ export class SkillsController {
 
   @Get('highlighted')
   @ApiOperation({ summary: 'Get highlighted skills' })
-  @ApiResponse({ status: 200, description: 'Highlighted skills retrieved successfully', type: [SkillResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Highlighted skills retrieved successfully',
+    type: [SkillResponseDto],
+  })
   async getHighlightedSkills() {
     const skills = await this.getHighlightedSkillsUseCase.execute();
     const data = this.skillMapper.toSkillsDto(skills);

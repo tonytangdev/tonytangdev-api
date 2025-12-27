@@ -13,10 +13,18 @@ export class ProjectResponseDto {
   @ApiProperty({ description: 'Start date', example: '2023-01-01' })
   startDate: string;
 
-  @ApiPropertyOptional({ description: 'End date', example: '2023-06-01', nullable: true })
+  @ApiPropertyOptional({
+    description: 'End date',
+    example: '2023-06-01',
+    nullable: true,
+  })
   endDate: string | null;
 
-  @ApiProperty({ description: 'Technologies used', type: [String], example: ['React', 'TypeScript'] })
+  @ApiProperty({
+    description: 'Technologies used',
+    type: [String],
+    example: ['React', 'TypeScript'],
+  })
   technologies: string[];
 
   @ApiPropertyOptional({ description: 'Repository URL', nullable: true })

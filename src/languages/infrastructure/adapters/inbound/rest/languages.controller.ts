@@ -18,7 +18,11 @@ export class LanguagesController {
 
   @Get()
   @ApiOperation({ summary: 'Get all languages' })
-  @ApiResponse({ status: 200, description: 'Languages retrieved successfully', type: [LanguageResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Languages retrieved successfully',
+    type: [LanguageResponseDto],
+  })
   async getLanguages() {
     const languages = await this.getLanguagesUseCase.execute();
     const data = this.languageMapper.toDtoList(languages);
@@ -31,7 +35,11 @@ export class LanguagesController {
 
   @Get('highlighted')
   @ApiOperation({ summary: 'Get highlighted languages' })
-  @ApiResponse({ status: 200, description: 'Highlighted languages retrieved successfully', type: [LanguageResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Highlighted languages retrieved successfully',
+    type: [LanguageResponseDto],
+  })
   async getHighlightedLanguages() {
     const languages = await this.getHighlightedLanguagesUseCase.execute();
     const data = this.languageMapper.toDtoList(languages);
@@ -44,7 +52,11 @@ export class LanguagesController {
 
   @Get('native')
   @ApiOperation({ summary: 'Get native languages' })
-  @ApiResponse({ status: 200, description: 'Native languages retrieved successfully', type: [LanguageResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Native languages retrieved successfully',
+    type: [LanguageResponseDto],
+  })
   async getNativeLanguages() {
     const languages = await this.getNativeLanguagesUseCase.execute();
     const data = this.languageMapper.toDtoList(languages);

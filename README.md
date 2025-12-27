@@ -31,6 +31,23 @@
 $ pnpm install
 ```
 
+## Database setup
+
+Start PostgreSQL:
+
+```bash
+$ docker-compose up -d
+```
+
+Environment vars in `.env`:
+- `DATABASE_HOST` - PostgreSQL host (default: localhost)
+- `DATABASE_PORT` - PostgreSQL port (default: 5432)
+- `DATABASE_NAME` - Database name (default: tonytangdev)
+- `DATABASE_USER` - Database user (default: postgres)
+- `DATABASE_PASSWORD` - Database password (default: postgres)
+- `DATABASE_SYNCHRONIZE` - Auto-sync schema (default: true, set false in prod)
+- `DATABASE_LOGGING` - Enable query logging (default: false)
+
 ## Compile and run the project
 
 ```bash

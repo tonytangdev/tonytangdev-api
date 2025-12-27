@@ -1,5 +1,6 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import languagesConfig from './languages.config';
 
 // Application ports (inbound)
@@ -17,6 +18,8 @@ import { GetNativeLanguagesService } from './application/services/get-native-lan
 
 // Infrastructure adapters (outbound)
 import { InMemoryLanguageRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-language.repository';
+import { TypeOrmLanguageRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-language.repository';
+import { LanguageOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/language.entity.orm';
 
 // Infrastructure adapters (inbound)
 import { LanguagesController } from './infrastructure/adapters/inbound/rest/languages.controller';
@@ -24,10 +27,37 @@ import { LanguageMapper } from './infrastructure/adapters/inbound/mappers/langua
 
 @Module({})
 export class LanguagesModule {
-  static forRoot(): DynamicModule {
+  static forTest(): DynamicModule {
     return {
       module: LanguagesModule,
       imports: [ConfigModule.forFeature(languagesConfig)],
+      providers: [
+        { provide: GetLanguagesUseCase, useClass: GetLanguagesService },
+        {
+          provide: GetHighlightedLanguagesUseCase,
+          useClass: GetHighlightedLanguagesService,
+        },
+        {
+          provide: GetNativeLanguagesUseCase,
+          useClass: GetNativeLanguagesService,
+        },
+        {
+          provide: LanguageRepositoryPort,
+          useClass: InMemoryLanguageRepository,
+        },
+        LanguageMapper,
+      ],
+      controllers: [LanguagesController],
+    };
+  }
+
+  static forRoot(): DynamicModule {
+    return {
+      module: LanguagesModule,
+      imports: [
+        ConfigModule.forFeature(languagesConfig),
+        TypeOrmModule.forFeature([LanguageOrm]),
+      ],
       providers: [
         // Application services (use cases) - bind abstract to concrete
         { provide: GetLanguagesUseCase, useClass: GetLanguagesService },
@@ -43,7 +73,7 @@ export class LanguagesModule {
         // Outbound adapters (repositories)
         {
           provide: LanguageRepositoryPort,
-          useClass: InMemoryLanguageRepository,
+          useClass: TypeOrmLanguageRepository,
         },
 
         // Mappers

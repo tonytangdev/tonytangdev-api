@@ -1,5 +1,6 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import skillsConfig from './skills.config';
 
 // Domain services
@@ -22,6 +23,10 @@ import { GetHighlightedSkillsService } from './application/services/get-highligh
 // Infrastructure adapters (outbound)
 import { InMemorySkillRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-skill.repository';
 import { InMemorySkillCategoryRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-skill-category.repository';
+import { TypeOrmSkillRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-skill.repository';
+import { TypeOrmSkillCategoryRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-skill-category.repository';
+import { SkillOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/skill.entity.orm';
+import { SkillCategoryOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/skill-category.entity.orm';
 
 // Infrastructure adapters (inbound)
 import { SkillsController } from './infrastructure/adapters/inbound/rest/skills.controller';
@@ -29,10 +34,39 @@ import { SkillMapper } from './infrastructure/adapters/inbound/mappers/skill.map
 
 @Module({})
 export class SkillsModule {
-  static forRoot(): DynamicModule {
+  static forTest(): DynamicModule {
     return {
       module: SkillsModule,
       imports: [ConfigModule.forFeature(skillsConfig)],
+      providers: [
+        SkillGroupingService,
+        { provide: GetSkillsUseCase, useClass: GetSkillsService },
+        {
+          provide: GetSkillsByCategoryUseCase,
+          useClass: GetSkillsByCategoryService,
+        },
+        {
+          provide: GetHighlightedSkillsUseCase,
+          useClass: GetHighlightedSkillsService,
+        },
+        { provide: SkillRepositoryPort, useClass: InMemorySkillRepository },
+        {
+          provide: SkillCategoryRepositoryPort,
+          useClass: InMemorySkillCategoryRepository,
+        },
+        SkillMapper,
+      ],
+      controllers: [SkillsController],
+    };
+  }
+
+  static forRoot(): DynamicModule {
+    return {
+      module: SkillsModule,
+      imports: [
+        ConfigModule.forFeature(skillsConfig),
+        TypeOrmModule.forFeature([SkillOrm, SkillCategoryOrm]),
+      ],
       providers: [
         // Domain services
         SkillGroupingService,
@@ -49,10 +83,10 @@ export class SkillsModule {
         },
 
         // Outbound adapters (repositories)
-        { provide: SkillRepositoryPort, useClass: InMemorySkillRepository },
+        { provide: SkillRepositoryPort, useClass: TypeOrmSkillRepository },
         {
           provide: SkillCategoryRepositoryPort,
-          useClass: InMemorySkillCategoryRepository,
+          useClass: TypeOrmSkillCategoryRepository,
         },
 
         // Mappers

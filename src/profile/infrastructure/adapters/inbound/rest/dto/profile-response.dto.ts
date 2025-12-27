@@ -8,7 +8,10 @@ export class ProfileResponseDto {
   @ApiProperty({ description: 'Full name', example: 'Tony Tang' })
   fullName: string;
 
-  @ApiProperty({ description: 'Professional title', example: 'Senior Software Engineer' })
+  @ApiProperty({
+    description: 'Professional title',
+    example: 'Senior Software Engineer',
+  })
   title: string;
 
   @ApiProperty({ description: 'Biography' })
@@ -26,7 +29,10 @@ export class ProfileResponseDto {
   @ApiProperty({ description: 'Timezone', example: 'America/Los_Angeles' })
   timezone: string;
 
-  @ApiProperty({ description: 'Availability status', example: 'Open to opportunities' })
+  @ApiProperty({
+    description: 'Availability status',
+    example: 'Open to opportunities',
+  })
   availability: string;
 
   @ApiProperty({ description: 'Years of experience', example: 8 })
@@ -38,6 +44,9 @@ export class ProfileResponseDto {
   @ApiPropertyOptional({ description: 'Resume URL', nullable: true })
   resumeUrl: string | null;
 
-  @ApiProperty({ description: 'Social media links', type: [SocialLinkResponseDto] })
+  @ApiProperty({
+    description: 'Social media links',
+    type: [SocialLinkResponseDto],
+  })
   socialLinks: SocialLinkResponseDto[];
 }

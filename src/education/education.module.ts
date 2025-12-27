@@ -1,5 +1,6 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import educationConfig from './education.config';
 
 // Domain services
@@ -20,6 +21,8 @@ import { GetInProgressEducationService } from './application/services/get-in-pro
 
 // Infrastructure adapters (outbound)
 import { InMemoryEducationRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-education.repository';
+import { TypeOrmEducationRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-education.repository';
+import { EducationOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/education.entity.orm';
 
 // Infrastructure adapters (inbound)
 import { EducationController } from './infrastructure/adapters/inbound/rest/education.controller';
@@ -27,10 +30,38 @@ import { EducationMapper } from './infrastructure/adapters/inbound/mappers/educa
 
 @Module({})
 export class EducationModule {
-  static forRoot(): DynamicModule {
+  static forTest(): DynamicModule {
     return {
       module: EducationModule,
       imports: [ConfigModule.forFeature(educationConfig)],
+      providers: [
+        EducationSortingService,
+        { provide: GetEducationUseCase, useClass: GetEducationService },
+        {
+          provide: GetHighlightedEducationUseCase,
+          useClass: GetHighlightedEducationService,
+        },
+        {
+          provide: GetInProgressEducationUseCase,
+          useClass: GetInProgressEducationService,
+        },
+        {
+          provide: EducationRepositoryPort,
+          useClass: InMemoryEducationRepository,
+        },
+        EducationMapper,
+      ],
+      controllers: [EducationController],
+    };
+  }
+
+  static forRoot(): DynamicModule {
+    return {
+      module: EducationModule,
+      imports: [
+        ConfigModule.forFeature(educationConfig),
+        TypeOrmModule.forFeature([EducationOrm]),
+      ],
       providers: [
         // Domain services
         EducationSortingService,
@@ -49,7 +80,7 @@ export class EducationModule {
         // Outbound adapters (repositories)
         {
           provide: EducationRepositoryPort,
-          useClass: InMemoryEducationRepository,
+          useClass: TypeOrmEducationRepository,
         },
 
         // Mappers

@@ -1,5 +1,6 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import projectsConfig from './projects.config';
 
 // Domain services
@@ -20,6 +21,8 @@ import { GetProjectsByTechnologyService } from './application/services/get-proje
 
 // Infrastructure adapters (outbound)
 import { InMemoryProjectRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-project.repository';
+import { TypeOrmProjectRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-project.repository';
+import { ProjectOrm } from './infrastructure/adapters/outbound/persistence/typeorm/entities/project.entity.orm';
 
 // Infrastructure adapters (inbound)
 import { ProjectsController } from './infrastructure/adapters/inbound/rest/projects.controller';
@@ -27,10 +30,35 @@ import { ProjectMapper } from './infrastructure/adapters/inbound/mappers/project
 
 @Module({})
 export class ProjectsModule {
-  static forRoot(): DynamicModule {
+  static forTest(): DynamicModule {
     return {
       module: ProjectsModule,
       imports: [ConfigModule.forFeature(projectsConfig)],
+      providers: [
+        ProjectSortingService,
+        { provide: GetProjectsUseCase, useClass: GetProjectsService },
+        { provide: GetProjectByIdUseCase, useClass: GetProjectByIdService },
+        {
+          provide: GetProjectsByTechnologyUseCase,
+          useClass: GetProjectsByTechnologyService,
+        },
+        {
+          provide: ProjectRepositoryPort,
+          useClass: InMemoryProjectRepository,
+        },
+        ProjectMapper,
+      ],
+      controllers: [ProjectsController],
+    };
+  }
+
+  static forRoot(): DynamicModule {
+    return {
+      module: ProjectsModule,
+      imports: [
+        ConfigModule.forFeature(projectsConfig),
+        TypeOrmModule.forFeature([ProjectOrm]),
+      ],
       providers: [
         // Domain services
         ProjectSortingService,
@@ -46,7 +74,7 @@ export class ProjectsModule {
         // Outbound adapters (repositories)
         {
           provide: ProjectRepositoryPort,
-          useClass: InMemoryProjectRepository,
+          useClass: TypeOrmProjectRepository,
         },
 
         // Mappers
