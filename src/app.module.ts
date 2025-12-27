@@ -6,6 +6,7 @@ import { SkillsModule } from './skills/skills.module';
 import { ExperiencesModule } from './experiences/experiences.module';
 import { EducationModule } from './education/education.module';
 import { ProjectsModule } from './projects/projects.module';
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true })],
@@ -23,6 +24,8 @@ export class AppModule {
       configService.get('EDUCATION_MODULE_ENABLED', 'false') === 'true';
     const projectsEnabled =
       configService.get('PROJECTS_MODULE_ENABLED', 'false') === 'true';
+    const profileEnabled =
+      configService.get('PROFILE_MODULE_ENABLED', 'false') === 'true';
 
     return {
       module: AppModule,
@@ -32,6 +35,7 @@ export class AppModule {
         ...(experiencesEnabled ? [ExperiencesModule.forRoot()] : []),
         ...(educationEnabled ? [EducationModule.forRoot()] : []),
         ...(projectsEnabled ? [ProjectsModule.forRoot()] : []),
+        ...(profileEnabled ? [ProfileModule.forRoot()] : []),
       ],
       controllers: [AppController],
       providers: [AppService],
