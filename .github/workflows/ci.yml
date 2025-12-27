@@ -37,3 +37,5 @@ jobs:
 
       - name: E2E Tests
         run: pnpm test:e2e
+        env:
+          DATABASE_STRATEGY: inmemory
