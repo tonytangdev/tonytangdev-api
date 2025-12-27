@@ -43,10 +43,31 @@ describe('GetSkillsByCategoryService', () => {
   });
 
   it('should return category with its skills', async () => {
-    const category = new SkillCategory('1', 'Languages', 'languages', 0);
+    const category = new SkillCategory({
+      id: '1',
+      name: 'Languages',
+      slug: 'languages',
+      order: 0,
+    });
     const skills = [
-      new Skill('1', 'TypeScript', '1', ProficiencyLevel.EXPERT, 5, 0, true),
-      new Skill('2', 'JavaScript', '1', ProficiencyLevel.EXPERT, 7, 1, true),
+      new Skill({
+        id: '1',
+        name: 'TypeScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 5,
+        order: 0,
+        isHighlighted: true,
+      }),
+      new Skill({
+        id: '2',
+        name: 'JavaScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 7,
+        order: 1,
+        isHighlighted: true,
+      }),
     ];
 
     categoryRepo.findBySlug.mockResolvedValue(category);
@@ -72,7 +93,12 @@ describe('GetSkillsByCategoryService', () => {
   });
 
   it('should return category with empty skills array', async () => {
-    const category = new SkillCategory('1', 'Languages', 'languages', 0);
+    const category = new SkillCategory({
+      id: '1',
+      name: 'Languages',
+      slug: 'languages',
+      order: 0,
+    });
 
     categoryRepo.findBySlug.mockResolvedValue(category);
     skillRepo.findByCategory.mockResolvedValue([]);

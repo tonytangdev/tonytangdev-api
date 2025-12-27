@@ -56,16 +56,21 @@ describe('SkillsController', () => {
 
   describe('getSkills', () => {
     it('should return grouped skills', async () => {
-      const category = new SkillCategory('1', 'Languages', 'languages', 0);
-      const skill = new Skill(
-        '1',
-        'TypeScript',
-        '1',
-        ProficiencyLevel.EXPERT,
-        5,
-        0,
-        true,
-      );
+      const category = new SkillCategory({
+        id: '1',
+        name: 'Languages',
+        slug: 'languages',
+        order: 0,
+      });
+      const skill = new Skill({
+        id: '1',
+        name: 'TypeScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 5,
+        order: 0,
+        isHighlighted: true,
+      });
       const grouped = new Map([[category, [skill]]]);
 
       getSkillsUseCase.execute.mockResolvedValue(grouped);
@@ -81,16 +86,21 @@ describe('SkillsController', () => {
 
   describe('getCategories', () => {
     it('should return all categories with skills', async () => {
-      const category = new SkillCategory('1', 'Languages', 'languages', 0);
-      const skill = new Skill(
-        '1',
-        'TypeScript',
-        '1',
-        ProficiencyLevel.EXPERT,
-        5,
-        0,
-        true,
-      );
+      const category = new SkillCategory({
+        id: '1',
+        name: 'Languages',
+        slug: 'languages',
+        order: 0,
+      });
+      const skill = new Skill({
+        id: '1',
+        name: 'TypeScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 5,
+        order: 0,
+        isHighlighted: true,
+      });
       const grouped = new Map([[category, [skill]]]);
 
       getSkillsUseCase.execute.mockResolvedValue(grouped);
@@ -104,9 +114,22 @@ describe('SkillsController', () => {
 
   describe('getSkillsByCategory', () => {
     it('should return skills for specific category', async () => {
-      const category = new SkillCategory('1', 'Languages', 'languages', 0);
+      const category = new SkillCategory({
+        id: '1',
+        name: 'Languages',
+        slug: 'languages',
+        order: 0,
+      });
       const skills = [
-        new Skill('1', 'TypeScript', '1', ProficiencyLevel.EXPERT, 5, 0, true),
+        new Skill({
+          id: '1',
+          name: 'TypeScript',
+          categoryId: '1',
+          proficiency: ProficiencyLevel.EXPERT,
+          yearsOfExperience: 5,
+          order: 0,
+          isHighlighted: true,
+        }),
       ];
 
       getSkillsByCategoryUseCase.execute.mockResolvedValue({
@@ -133,8 +156,24 @@ describe('SkillsController', () => {
   describe('getHighlightedSkills', () => {
     it('should return highlighted skills', async () => {
       const skills = [
-        new Skill('1', 'TypeScript', '1', ProficiencyLevel.EXPERT, 5, 0, true),
-        new Skill('2', 'NestJS', '2', ProficiencyLevel.EXPERT, 4, 0, true),
+        new Skill({
+          id: '1',
+          name: 'TypeScript',
+          categoryId: '1',
+          proficiency: ProficiencyLevel.EXPERT,
+          yearsOfExperience: 5,
+          order: 0,
+          isHighlighted: true,
+        }),
+        new Skill({
+          id: '2',
+          name: 'NestJS',
+          categoryId: '2',
+          proficiency: ProficiencyLevel.EXPERT,
+          yearsOfExperience: 4,
+          order: 0,
+          isHighlighted: true,
+        }),
       ];
 
       getHighlightedSkillsUseCase.execute.mockResolvedValue(skills);

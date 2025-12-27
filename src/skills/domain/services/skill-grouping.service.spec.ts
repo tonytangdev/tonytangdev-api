@@ -12,14 +12,48 @@ describe('SkillGroupingService', () => {
 
   it('should group skills by category', () => {
     const categories = [
-      new SkillCategory('1', 'Languages', 'languages', 0),
-      new SkillCategory('2', 'Frameworks', 'frameworks', 1),
+      new SkillCategory({
+        id: '1',
+        name: 'Languages',
+        slug: 'languages',
+        order: 0,
+      }),
+      new SkillCategory({
+        id: '2',
+        name: 'Frameworks',
+        slug: 'frameworks',
+        order: 1,
+      }),
     ];
 
     const skills = [
-      new Skill('1', 'TypeScript', '1', ProficiencyLevel.EXPERT, 5, 0, true),
-      new Skill('2', 'JavaScript', '1', ProficiencyLevel.EXPERT, 7, 1, true),
-      new Skill('3', 'NestJS', '2', ProficiencyLevel.EXPERT, 4, 0, true),
+      new Skill({
+        id: '1',
+        name: 'TypeScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 5,
+        order: 0,
+        isHighlighted: true,
+      }),
+      new Skill({
+        id: '2',
+        name: 'JavaScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 7,
+        order: 1,
+        isHighlighted: true,
+      }),
+      new Skill({
+        id: '3',
+        name: 'NestJS',
+        categoryId: '2',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 4,
+        order: 0,
+        isHighlighted: true,
+      }),
     ];
 
     const result = service.groupByCategory(categories, skills);
@@ -36,8 +70,8 @@ describe('SkillGroupingService', () => {
 
   it('should sort categories by order', () => {
     const categories = [
-      new SkillCategory('1', 'B Category', 'b', 1),
-      new SkillCategory('2', 'A Category', 'a', 0),
+      new SkillCategory({ id: '1', name: 'B Category', slug: 'b', order: 1 }),
+      new SkillCategory({ id: '2', name: 'A Category', slug: 'a', order: 0 }),
     ];
 
     const skills: Skill[] = [];
@@ -50,12 +84,43 @@ describe('SkillGroupingService', () => {
   });
 
   it('should sort skills within category by order', () => {
-    const categories = [new SkillCategory('1', 'Languages', 'languages', 0)];
+    const categories = [
+      new SkillCategory({
+        id: '1',
+        name: 'Languages',
+        slug: 'languages',
+        order: 0,
+      }),
+    ];
 
     const skills = [
-      new Skill('2', 'JavaScript', '1', ProficiencyLevel.EXPERT, 7, 1, true),
-      new Skill('1', 'TypeScript', '1', ProficiencyLevel.EXPERT, 5, 0, true),
-      new Skill('3', 'Python', '1', ProficiencyLevel.ADVANCED, 3, 2, false),
+      new Skill({
+        id: '2',
+        name: 'JavaScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 7,
+        order: 1,
+        isHighlighted: true,
+      }),
+      new Skill({
+        id: '1',
+        name: 'TypeScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 5,
+        order: 0,
+        isHighlighted: true,
+      }),
+      new Skill({
+        id: '3',
+        name: 'Python',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.ADVANCED,
+        yearsOfExperience: 3,
+        order: 2,
+        isHighlighted: false,
+      }),
     ];
 
     const result = service.groupByCategory(categories, skills);
@@ -67,11 +132,34 @@ describe('SkillGroupingService', () => {
   });
 
   it('should handle skills without matching category', () => {
-    const categories = [new SkillCategory('1', 'Languages', 'languages', 0)];
+    const categories = [
+      new SkillCategory({
+        id: '1',
+        name: 'Languages',
+        slug: 'languages',
+        order: 0,
+      }),
+    ];
 
     const skills = [
-      new Skill('1', 'TypeScript', '1', ProficiencyLevel.EXPERT, 5, 0, true),
-      new Skill('2', 'NestJS', '999', ProficiencyLevel.EXPERT, 4, 0, true),
+      new Skill({
+        id: '1',
+        name: 'TypeScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 5,
+        order: 0,
+        isHighlighted: true,
+      }),
+      new Skill({
+        id: '2',
+        name: 'NestJS',
+        categoryId: '999',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 4,
+        order: 0,
+        isHighlighted: true,
+      }),
     ];
 
     const result = service.groupByCategory(categories, skills);
@@ -82,7 +170,14 @@ describe('SkillGroupingService', () => {
   });
 
   it('should handle empty categories', () => {
-    const categories = [new SkillCategory('1', 'Languages', 'languages', 0)];
+    const categories = [
+      new SkillCategory({
+        id: '1',
+        name: 'Languages',
+        slug: 'languages',
+        order: 0,
+      }),
+    ];
     const skills: Skill[] = [];
 
     const result = service.groupByCategory(categories, skills);

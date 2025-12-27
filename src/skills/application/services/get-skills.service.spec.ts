@@ -46,13 +46,39 @@ describe('GetSkillsService', () => {
 
   it('should return grouped skills by category', async () => {
     const categories = [
-      new SkillCategory('1', 'Languages', 'languages', 0),
-      new SkillCategory('2', 'Frameworks', 'frameworks', 1),
+      new SkillCategory({
+        id: '1',
+        name: 'Languages',
+        slug: 'languages',
+        order: 0,
+      }),
+      new SkillCategory({
+        id: '2',
+        name: 'Frameworks',
+        slug: 'frameworks',
+        order: 1,
+      }),
     ];
 
     const skills = [
-      new Skill('1', 'TypeScript', '1', ProficiencyLevel.EXPERT, 5, 0, true),
-      new Skill('2', 'NestJS', '2', ProficiencyLevel.EXPERT, 4, 0, true),
+      new Skill({
+        id: '1',
+        name: 'TypeScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 5,
+        order: 0,
+        isHighlighted: true,
+      }),
+      new Skill({
+        id: '2',
+        name: 'NestJS',
+        categoryId: '2',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 4,
+        order: 0,
+        isHighlighted: true,
+      }),
     ];
 
     categoryRepo.findAll.mockResolvedValue(categories);
@@ -77,9 +103,24 @@ describe('GetSkillsService', () => {
   });
 
   it('should use grouping service for organizing data', async () => {
-    const categories = [new SkillCategory('1', 'Languages', 'languages', 0)];
+    const categories = [
+      new SkillCategory({
+        id: '1',
+        name: 'Languages',
+        slug: 'languages',
+        order: 0,
+      }),
+    ];
     const skills = [
-      new Skill('1', 'TypeScript', '1', ProficiencyLevel.EXPERT, 5, 0, true),
+      new Skill({
+        id: '1',
+        name: 'TypeScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 5,
+        order: 0,
+        isHighlighted: true,
+      }),
     ];
 
     categoryRepo.findAll.mockResolvedValue(categories);

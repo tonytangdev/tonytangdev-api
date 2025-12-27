@@ -34,8 +34,24 @@ describe('GetHighlightedSkillsService', () => {
 
   it('should return highlighted skills', async () => {
     const skills = [
-      new Skill('1', 'TypeScript', '1', ProficiencyLevel.EXPERT, 5, 0, true),
-      new Skill('2', 'NestJS', '2', ProficiencyLevel.EXPERT, 4, 0, true),
+      new Skill({
+        id: '1',
+        name: 'TypeScript',
+        categoryId: '1',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 5,
+        order: 0,
+        isHighlighted: true,
+      }),
+      new Skill({
+        id: '2',
+        name: 'NestJS',
+        categoryId: '2',
+        proficiency: ProficiencyLevel.EXPERT,
+        yearsOfExperience: 4,
+        order: 0,
+        isHighlighted: true,
+      }),
     ];
 
     skillRepo.findHighlighted.mockResolvedValue(skills);
