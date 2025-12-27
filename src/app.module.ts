@@ -8,6 +8,7 @@ import { EducationModule } from './education/education.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ProfileModule } from './profile/profile.module';
 import { LanguagesModule } from './languages/languages.module';
+import { RefactoringsModule } from './refactorings/refactorings.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true })],
@@ -29,6 +30,8 @@ export class AppModule {
       configService.get('PROFILE_MODULE_ENABLED', 'false') === 'true';
     const languagesEnabled =
       configService.get('LANGUAGES_MODULE_ENABLED', 'false') === 'true';
+    const refactoringsEnabled =
+      configService.get('REFACTORINGS_MODULE_ENABLED', 'false') === 'true';
 
     return {
       module: AppModule,
@@ -40,6 +43,7 @@ export class AppModule {
         ...(projectsEnabled ? [ProjectsModule.forRoot()] : []),
         ...(profileEnabled ? [ProfileModule.forRoot()] : []),
         ...(languagesEnabled ? [LanguagesModule.forRoot()] : []),
+        ...(refactoringsEnabled ? [RefactoringsModule.forRoot()] : []),
       ],
       controllers: [AppController],
       providers: [AppService],
