@@ -3,9 +3,22 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { AppModule } from './app.module';
+import { DatabaseConfigValidator } from './database/database.validator';
 
 async function bootstrap() {
+  // Validate database configuration BEFORE creating app
+  const dbConfig = DatabaseConfigValidator.readConfig();
+  DatabaseConfigValidator.validate(dbConfig);
+
   const app = await NestFactory.create(AppModule.forRoot());
+
+  // Log which databases are connected
+  if (dbConfig.postgresqlEnabled) {
+    console.log('✓ PostgreSQL connected');
+  }
+  if (dbConfig.mongodbEnabled) {
+    console.log('✓ MongoDB connected');
+  }
 
   // API versioning
   app.setGlobalPrefix('api/v1');

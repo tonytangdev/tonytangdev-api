@@ -38,7 +38,7 @@ export class AppModule {
       module: AppModule,
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
-        DatabaseModule,
+        DatabaseModule.forRoot(),
         ...(skillsEnabled ? [SkillsModule.forRoot()] : []),
         ...(experiencesEnabled ? [ExperiencesModule.forRoot()] : []),
         ...(educationEnabled ? [EducationModule.forRoot()] : []),
