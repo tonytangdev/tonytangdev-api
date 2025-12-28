@@ -13,6 +13,8 @@ describe('CreateRefactoringShowcaseService', () => {
       findHighlighted: jest.fn(),
       getMaxOrder: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
+      patch: jest.fn(),
     };
 
     service = new CreateRefactoringShowcaseService(mockRepository);
