@@ -67,6 +67,14 @@ export class InMemoryProjectRepository extends ProjectRepositoryPort {
     return Promise.resolve(maxOrder);
   }
 
+  async delete(id: string): Promise<void> {
+    const index = this.projects.findIndex((p) => p.id === id);
+    if (index !== -1) {
+      this.projects.splice(index, 1);
+    }
+    return Promise.resolve();
+  }
+
   private normalizeForSlug(tech: string): string {
     return tech.toLowerCase().replace(/[.\s]+/g, '-');
   }

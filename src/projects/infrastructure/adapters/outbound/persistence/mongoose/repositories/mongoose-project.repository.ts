@@ -69,6 +69,10 @@ export class MongooseProjectRepository extends ProjectRepositoryPort {
     return result?.order ?? 0;
   }
 
+  async delete(id: string): Promise<void> {
+    await this.model.findByIdAndDelete(id).exec();
+  }
+
   private toDomain(doc: ProjectDocument): Project {
     return new Project({
       id: doc._id,

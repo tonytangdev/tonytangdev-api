@@ -6,6 +6,7 @@ import { GetProjectByIdUseCase } from '../../../../application/ports/inbound/get
 import { GetProjectsByTechnologyUseCase } from '../../../../application/ports/inbound/get-projects-by-technology.use-case';
 import { CreateProjectUseCase } from '../../../../application/ports/inbound/create-project.use-case';
 import { UpdateProjectUseCase } from '../../../../application/ports/inbound/update-project.use-case';
+import { DeleteProjectUseCase } from '../../../../application/ports/inbound/delete-project.use-case';
 import { ProjectMapper } from '../mappers/project.mapper';
 import { Project } from '../../../../domain/entities/project.entity';
 import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
@@ -17,6 +18,7 @@ describe('ProjectsController', () => {
   let getProjectsByTechnologyUseCase: jest.Mocked<GetProjectsByTechnologyUseCase>;
   let createProjectUseCase: jest.Mocked<CreateProjectUseCase>;
   let updateProjectUseCase: jest.Mocked<UpdateProjectUseCase>;
+  let deleteProjectUseCase: jest.Mocked<DeleteProjectUseCase>;
 
   beforeEach(async () => {
     const mockGetProjectsUseCase = {
@@ -39,6 +41,10 @@ describe('ProjectsController', () => {
       execute: jest.fn(),
     };
 
+    const mockDeleteProjectUseCase = {
+      execute: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProjectsController],
       providers: [
@@ -53,6 +59,7 @@ describe('ProjectsController', () => {
         },
         { provide: CreateProjectUseCase, useValue: mockCreateProjectUseCase },
         { provide: UpdateProjectUseCase, useValue: mockUpdateProjectUseCase },
+        { provide: DeleteProjectUseCase, useValue: mockDeleteProjectUseCase },
         ProjectMapper,
       ],
     })
@@ -66,6 +73,7 @@ describe('ProjectsController', () => {
     getProjectsByTechnologyUseCase = module.get(GetProjectsByTechnologyUseCase);
     createProjectUseCase = module.get(CreateProjectUseCase);
     updateProjectUseCase = module.get(UpdateProjectUseCase);
+    deleteProjectUseCase = module.get(DeleteProjectUseCase);
   });
 
   it('should be defined', () => {
@@ -502,6 +510,19 @@ describe('ProjectsController', () => {
       expect(result.data).toHaveProperty('startDate');
       expect(result.data).toHaveProperty('technologies');
       expect(result.data).toHaveProperty('isHighlighted');
+    });
+  });
+
+  describe('deleteProject', () => {
+    it('should delete a project and return null data', async () => {
+      deleteProjectUseCase.execute.mockResolvedValue(undefined);
+
+      const result = await controller.deleteProject('proj-123');
+
+      expect(deleteProjectUseCase.execute).toHaveBeenCalledWith({
+        id: 'proj-123',
+      });
+      expect(result).toEqual({ data: null, meta: {} });
     });
   });
 });

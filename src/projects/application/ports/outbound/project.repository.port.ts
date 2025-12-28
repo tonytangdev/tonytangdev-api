@@ -12,4 +12,5 @@ export abstract class ProjectRepositoryPort {
     excludeId: string,
   ): Promise<Project | null>;
   abstract getMaxOrder(): Promise<number>;
+  abstract delete(id: string): Promise<void>;
 }

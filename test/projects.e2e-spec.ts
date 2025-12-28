@@ -891,4 +891,79 @@ describe('Projects API (e2e)', () => {
         });
     });
   });
+
+  describe('DELETE /api/v1/projects/:id', () => {
+    const validApiKey = 'test-api-key';
+    let projectIdToDelete: string;
+
+    beforeEach(async () => {
+      // Create a project to delete
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: `Test Delete Project ${Date.now()}`,
+          description: 'A project to be deleted',
+          startDate: '2024-01-01',
+          technologies: ['TypeScript'],
+        });
+      projectIdToDelete = createRes.body.data.id;
+    });
+
+    it('should delete project successfully with valid API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/projects/${projectIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data', null);
+          expect(res.body).toHaveProperty('meta');
+        });
+    });
+
+    it('should reject delete without API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/projects/${projectIdToDelete}`)
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject delete with invalid API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/projects/${projectIdToDelete}`)
+        .set('x-api-key', 'wrong-key')
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should return 404 for non-existent project', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/projects/non-existent-id')
+        .set('x-api-key', validApiKey)
+        .expect(404)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 404);
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should actually remove the project from database', async () => {
+      // Delete the project
+      await request(app.getHttpServer())
+        .delete(`/api/v1/projects/${projectIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200);
+
+      // Verify it's gone by trying to delete again
+      return request(app.getHttpServer())
+        .delete(`/api/v1/projects/${projectIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(404);
+    });
+  });
 });

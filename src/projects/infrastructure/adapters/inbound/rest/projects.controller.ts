@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   NotFoundException,
   Param,
   Body,
@@ -22,6 +23,7 @@ import { GetProjectByIdUseCase } from '../../../../application/ports/inbound/get
 import { GetProjectsByTechnologyUseCase } from '../../../../application/ports/inbound/get-projects-by-technology.use-case';
 import { CreateProjectUseCase } from '../../../../application/ports/inbound/create-project.use-case';
 import { UpdateProjectUseCase } from '../../../../application/ports/inbound/update-project.use-case';
+import { DeleteProjectUseCase } from '../../../../application/ports/inbound/delete-project.use-case';
 import { ProjectMapper } from '../mappers/project.mapper';
 import { ProjectResponseDto } from './dto/project-response.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -37,6 +39,7 @@ export class ProjectsController {
     private readonly getProjectsByTechnologyUseCase: GetProjectsByTechnologyUseCase,
     private readonly createProjectUseCase: CreateProjectUseCase,
     private readonly updateProjectUseCase: UpdateProjectUseCase,
+    private readonly deleteProjectUseCase: DeleteProjectUseCase,
     private readonly projectMapper: ProjectMapper,
   ) {}
 
@@ -95,6 +98,19 @@ export class ProjectsController {
     const project = await this.updateProjectUseCase.execute({ id, ...dto });
     const data = this.projectMapper.toDto(project);
     return { data, meta: {} };
+  }
+
+  @Delete(':id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Delete a project' })
+  @ApiResponse({ status: 200, description: 'Project deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid API key' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiBearerAuth('api-key')
+  async deleteProject(@Param('id') id: string) {
+    await this.deleteProjectUseCase.execute({ id });
+    return { data: null, meta: {} };
   }
 
   @Get('technologies/:slug')

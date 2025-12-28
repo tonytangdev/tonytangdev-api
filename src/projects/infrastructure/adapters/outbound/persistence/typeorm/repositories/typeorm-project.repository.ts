@@ -74,6 +74,10 @@ export class TypeOrmProjectRepository extends ProjectRepositoryPort {
     return result?.max ?? 0;
   }
 
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
+
   private toDomain(orm: ProjectOrm): Project {
     return new Project({
       id: orm.id,
