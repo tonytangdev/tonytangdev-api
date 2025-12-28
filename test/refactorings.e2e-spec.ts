@@ -600,6 +600,181 @@ describe('Refactorings API (e2e)', () => {
     });
   });
 
+  describe('PUT /api/v1/refactorings/:id', () => {
+    const validApiKey = 'test-api-key';
+    let showcaseId: string;
+
+    beforeEach(async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Original Title',
+          description: 'Original description',
+          technologies: ['JavaScript'],
+          difficulty: 'beginner',
+          tags: ['original-tag'],
+          steps: [
+            {
+              title: 'Original Step',
+              description: 'Original step description',
+              explanation: 'Original explanation',
+              files: [
+                {
+                  filename: 'original.js',
+                  language: 'javascript',
+                  content: 'console.log("original");',
+                },
+              ],
+            },
+          ],
+        })
+        .expect(201);
+
+      showcaseId = createRes.body.data.id;
+    });
+
+    it('should update showcase with all fields', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Updated Title',
+          description: 'Updated description',
+          technologies: ['TypeScript', 'JavaScript'],
+          difficulty: 'advanced',
+          tags: ['clean-code', 'refactoring'],
+          isHighlighted: true,
+          steps: [
+            {
+              title: 'Updated Step 1',
+              description: 'First updated step',
+              explanation: 'Updated explanation 1',
+              files: [
+                {
+                  filename: 'updated1.ts',
+                  language: 'typescript',
+                  content: 'const x = 1;',
+                },
+              ],
+            },
+            {
+              title: 'Updated Step 2',
+              description: 'Second updated step',
+              explanation: 'Updated explanation 2',
+              files: [
+                {
+                  filename: 'updated2.ts',
+                  language: 'typescript',
+                  content: 'const y = 2;',
+                },
+              ],
+            },
+          ],
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.id).toBe(showcaseId);
+          expect(res.body.data.title).toBe('Updated Title');
+          expect(res.body.data.description).toBe('Updated description');
+          expect(res.body.data.technologies).toEqual([
+            'TypeScript',
+            'JavaScript',
+          ]);
+          expect(res.body.data.difficulty).toBe('advanced');
+          expect(res.body.data.tags).toEqual(['clean-code', 'refactoring']);
+          expect(res.body.data.isHighlighted).toBe(true);
+          expect(res.body.data.steps).toHaveLength(2);
+          expect(res.body.data.steps[0].title).toBe('Updated Step 1');
+          expect(res.body.data.steps[1].title).toBe('Updated Step 2');
+        });
+    });
+
+    it('should return 404 for non-existent showcase', () => {
+      return request(app.getHttpServer())
+        .put('/api/v1/refactorings/non-existent-id')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [],
+        })
+        .expect(404);
+    });
+
+    it('should return 401 without API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/refactorings/${showcaseId}`)
+        .send({
+          title: 'Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [],
+        })
+        .expect(401);
+    });
+
+    it('should return 401 with invalid API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', 'invalid-key')
+        .send({
+          title: 'Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [],
+        })
+        .expect(401);
+    });
+
+    it('should return 400 for invalid input data', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          title: '',
+          description: 'Test',
+          technologies: [],
+          difficulty: 'invalid-difficulty',
+          tags: [],
+          steps: [],
+        })
+        .expect(400);
+    });
+
+    it('should verify updated data via GET', async () => {
+      await request(app.getHttpServer())
+        .put(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Verified Update',
+          description: 'Verified description',
+          technologies: ['TypeScript'],
+          difficulty: 'intermediate',
+          tags: ['verified'],
+          steps: [],
+        })
+        .expect(200);
+
+      return request(app.getHttpServer())
+        .get(`/api/v1/refactorings/${showcaseId}`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.title).toBe('Verified Update');
+          expect(res.body.data.description).toBe('Verified description');
+          expect(res.body.data.difficulty).toBe('intermediate');
+          expect(res.body.data.tags).toEqual(['verified']);
+        });
+    });
+  });
+
   describe('CORS', () => {
     it('should have CORS enabled', () => {
       return request(app.getHttpServer())

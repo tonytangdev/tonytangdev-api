@@ -4,6 +4,7 @@ import { GetRefactoringShowcasesUseCase } from '../../../../application/ports/in
 import { GetRefactoringShowcaseByIdUseCase } from '../../../../application/ports/inbound/get-refactoring-showcase-by-id.use-case';
 import { GetHighlightedRefactoringShowcasesUseCase } from '../../../../application/ports/inbound/get-highlighted-refactoring-showcases.use-case';
 import { CreateRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/create-refactoring-showcase.use-case';
+import { UpdateRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/update-refactoring-showcase.use-case';
 import { RefactoringShowcaseMapper } from '../mappers/refactoring-showcase.mapper';
 import { RefactoringShowcase } from '../../../../domain/entities/refactoring-showcase.entity';
 import { DifficultyLevel } from '../../../../domain/value-objects/difficulty-level.vo';
@@ -12,6 +13,7 @@ import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
 describe('RefactoringsController', () => {
   let controller: RefactoringsController;
   let createRefactoringShowcaseUseCase: jest.Mocked<CreateRefactoringShowcaseUseCase>;
+  let updateRefactoringShowcaseUseCase: jest.Mocked<UpdateRefactoringShowcaseUseCase>;
 
   beforeEach(async () => {
     const mockGetRefactoringShowcasesUseCase = {
@@ -27,6 +29,10 @@ describe('RefactoringsController', () => {
     };
 
     const mockCreateRefactoringShowcaseUseCase = {
+      execute: jest.fn(),
+    };
+
+    const mockUpdateRefactoringShowcaseUseCase = {
       execute: jest.fn(),
     };
 
@@ -49,6 +55,10 @@ describe('RefactoringsController', () => {
           provide: CreateRefactoringShowcaseUseCase,
           useValue: mockCreateRefactoringShowcaseUseCase,
         },
+        {
+          provide: UpdateRefactoringShowcaseUseCase,
+          useValue: mockUpdateRefactoringShowcaseUseCase,
+        },
         RefactoringShowcaseMapper,
       ],
     })
@@ -59,6 +69,9 @@ describe('RefactoringsController', () => {
     controller = module.get<RefactoringsController>(RefactoringsController);
     createRefactoringShowcaseUseCase = module.get(
       CreateRefactoringShowcaseUseCase,
+    );
+    updateRefactoringShowcaseUseCase = module.get(
+      UpdateRefactoringShowcaseUseCase,
     );
   });
 
@@ -138,6 +151,90 @@ describe('RefactoringsController', () => {
       createRefactoringShowcaseUseCase.execute.mockResolvedValue(showcase);
 
       const result = await controller.createRefactoringShowcase(dto);
+
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('meta');
+      expect(result.meta).toEqual({});
+    });
+  });
+
+  describe('updateRefactoringShowcase', () => {
+    it('should update showcase and return mapped response', async () => {
+      const id = 'showcase-123';
+      const dto = {
+        title: 'Updated Extract Method',
+        description: 'Updated description',
+        technologies: ['TypeScript', 'JavaScript'],
+        difficulty: DifficultyLevel.ADVANCED,
+        tags: ['clean-code', 'refactoring'],
+        isHighlighted: true,
+        steps: [
+          {
+            title: 'Step 1',
+            description: 'First step',
+            explanation: 'Explanation',
+            files: [
+              {
+                filename: 'before.ts',
+                language: 'typescript',
+                content: 'updated code',
+              },
+            ],
+          },
+        ],
+      };
+
+      const showcase = new RefactoringShowcase({
+        id,
+        title: 'Updated Extract Method',
+        description: 'Updated description',
+        technologies: ['TypeScript', 'JavaScript'],
+        difficulty: DifficultyLevel.ADVANCED,
+        tags: ['clean-code', 'refactoring'],
+        order: 5,
+        isHighlighted: true,
+        steps: [],
+      });
+
+      updateRefactoringShowcaseUseCase.execute.mockResolvedValue(showcase);
+
+      const result = await controller.updateRefactoringShowcase(id, dto);
+
+      expect(updateRefactoringShowcaseUseCase.execute).toHaveBeenCalledWith({
+        id,
+        ...dto,
+      });
+      expect(result.data.title).toBe('Updated Extract Method');
+      expect(result.data.id).toBe(id);
+      expect(result.meta).toEqual({});
+    });
+
+    it('should return proper response structure', async () => {
+      const id = 'test-id';
+      const dto = {
+        title: 'Test',
+        description: 'Test',
+        technologies: ['TypeScript'],
+        difficulty: DifficultyLevel.BEGINNER,
+        tags: [],
+        steps: [],
+      };
+
+      const showcase = new RefactoringShowcase({
+        id,
+        title: 'Test',
+        description: 'Test',
+        technologies: ['TypeScript'],
+        difficulty: DifficultyLevel.BEGINNER,
+        tags: [],
+        order: 1,
+        isHighlighted: false,
+        steps: [],
+      });
+
+      updateRefactoringShowcaseUseCase.execute.mockResolvedValue(showcase);
+
+      const result = await controller.updateRefactoringShowcase(id, dto);
 
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('meta');

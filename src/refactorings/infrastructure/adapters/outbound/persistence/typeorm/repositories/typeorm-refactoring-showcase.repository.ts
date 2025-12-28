@@ -108,6 +108,19 @@ export class TypeOrmRefactoringShowcaseRepository extends RefactoringShowcaseRep
     return this.toDomain(saved);
   }
 
+  async update(showcase: RefactoringShowcase): Promise<RefactoringShowcase> {
+    await this.repository
+      .createQueryBuilder()
+      .delete()
+      .from(RefactoringStepOrm)
+      .where('showcaseId = :showcaseId', { showcaseId: showcase.id })
+      .execute();
+
+    const orm = this.toOrm(showcase);
+    const saved = await this.repository.save(orm);
+    return this.toDomain(saved);
+  }
+
   async getMaxOrder(): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('showcase')

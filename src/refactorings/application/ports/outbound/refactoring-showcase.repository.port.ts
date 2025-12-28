@@ -28,5 +28,6 @@ export abstract class RefactoringShowcaseRepositoryPort {
   abstract findById(id: string): Promise<RefactoringShowcase | null>;
   abstract findHighlighted(): Promise<RefactoringShowcase[]>;
   abstract create(showcase: RefactoringShowcase): Promise<RefactoringShowcase>;
+  abstract update(showcase: RefactoringShowcase): Promise<RefactoringShowcase>;
   abstract getMaxOrder(): Promise<number>;
 }

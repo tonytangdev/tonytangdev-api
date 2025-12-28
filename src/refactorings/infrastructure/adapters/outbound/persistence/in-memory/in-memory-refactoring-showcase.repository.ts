@@ -77,6 +77,14 @@ export class InMemoryRefactoringShowcaseRepository extends RefactoringShowcaseRe
     return Promise.resolve(showcase);
   }
 
+  async update(showcase: RefactoringShowcase): Promise<RefactoringShowcase> {
+    const index = this.showcases.findIndex((s) => s.id === showcase.id);
+    if (index !== -1) {
+      this.showcases[index] = showcase;
+    }
+    return Promise.resolve(showcase);
+  }
+
   async getMaxOrder(): Promise<number> {
     if (this.showcases.length === 0) {
       return Promise.resolve(0);

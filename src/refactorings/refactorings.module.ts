@@ -7,10 +7,12 @@ import { GetRefactoringShowcasesUseCase } from './application/ports/inbound/get-
 import { GetRefactoringShowcaseByIdUseCase } from './application/ports/inbound/get-refactoring-showcase-by-id.use-case';
 import { GetHighlightedRefactoringShowcasesUseCase } from './application/ports/inbound/get-highlighted-refactoring-showcases.use-case';
 import { CreateRefactoringShowcaseUseCase } from './application/ports/inbound/create-refactoring-showcase.use-case';
+import { UpdateRefactoringShowcaseUseCase } from './application/ports/inbound/update-refactoring-showcase.use-case';
 import { GetRefactoringShowcasesService } from './application/services/get-refactoring-showcases.service';
 import { GetRefactoringShowcaseByIdService } from './application/services/get-refactoring-showcase-by-id.service';
 import { GetHighlightedRefactoringShowcasesService } from './application/services/get-highlighted-refactoring-showcases.service';
 import { CreateRefactoringShowcaseService } from './application/services/create-refactoring-showcase.service';
+import { UpdateRefactoringShowcaseService } from './application/services/update-refactoring-showcase.service';
 import { RefactoringShowcaseRepositoryPort } from './application/ports/outbound/refactoring-showcase.repository.port';
 import { InMemoryRefactoringShowcaseRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-refactoring-showcase.repository';
 import { TypeOrmRefactoringShowcaseRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-refactoring-showcase.repository';
@@ -47,6 +49,10 @@ export class RefactoringsModule {
         {
           provide: CreateRefactoringShowcaseUseCase,
           useClass: CreateRefactoringShowcaseService,
+        },
+        {
+          provide: UpdateRefactoringShowcaseUseCase,
+          useClass: UpdateRefactoringShowcaseService,
         },
         {
           provide: RefactoringShowcaseRepositoryPort,
@@ -121,6 +127,10 @@ export class RefactoringsModule {
         {
           provide: CreateRefactoringShowcaseUseCase,
           useClass: CreateRefactoringShowcaseService,
+        },
+        {
+          provide: UpdateRefactoringShowcaseUseCase,
+          useClass: UpdateRefactoringShowcaseService,
         },
         ...repoProviders,
         RefactoringShowcaseMapper,

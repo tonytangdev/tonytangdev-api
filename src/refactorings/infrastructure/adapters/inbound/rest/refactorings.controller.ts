@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   NotFoundException,
   Param,
@@ -22,11 +23,13 @@ import { GetRefactoringShowcasesUseCase } from '../../../../application/ports/in
 import { GetRefactoringShowcaseByIdUseCase } from '../../../../application/ports/inbound/get-refactoring-showcase-by-id.use-case';
 import { GetHighlightedRefactoringShowcasesUseCase } from '../../../../application/ports/inbound/get-highlighted-refactoring-showcases.use-case';
 import { CreateRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/create-refactoring-showcase.use-case';
+import { UpdateRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/update-refactoring-showcase.use-case';
 import { RefactoringShowcaseMapper } from '../mappers/refactoring-showcase.mapper';
 import { DifficultyLevel } from '../../../../domain/value-objects/difficulty-level.vo';
 import { RefactoringShowcaseListDto } from './dto/refactoring-showcase-list.dto';
 import { RefactoringShowcaseDetailDto } from './dto/refactoring-showcase-detail.dto';
 import { CreateRefactoringShowcaseDto } from './dto/create-refactoring-showcase.dto';
+import { UpdateRefactoringShowcaseDto } from './dto/update-refactoring-showcase.dto';
 import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
 
 @ApiTags('refactorings')
@@ -37,6 +40,7 @@ export class RefactoringsController {
     private readonly getRefactoringShowcaseByIdUseCase: GetRefactoringShowcaseByIdUseCase,
     private readonly getHighlightedRefactoringShowcasesUseCase: GetHighlightedRefactoringShowcasesUseCase,
     private readonly createRefactoringShowcaseUseCase: CreateRefactoringShowcaseUseCase,
+    private readonly updateRefactoringShowcaseUseCase: UpdateRefactoringShowcaseUseCase,
     private readonly refactoringShowcaseMapper: RefactoringShowcaseMapper,
   ) {}
 
@@ -165,6 +169,34 @@ export class RefactoringsController {
   @ApiUnauthorizedResponse({ description: 'Invalid or missing API key' })
   async createRefactoringShowcase(@Body() dto: CreateRefactoringShowcaseDto) {
     const showcase = await this.createRefactoringShowcaseUseCase.execute(dto);
+    const data = this.refactoringShowcaseMapper.toDetailDto(showcase);
+
+    return {
+      data,
+      meta: {},
+    };
+  }
+
+  @Put(':id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Update an existing refactoring showcase' })
+  @ApiParam({ name: 'id', description: 'Refactoring showcase ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Refactoring showcase updated successfully',
+    type: RefactoringShowcaseDetailDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing API key' })
+  @ApiNotFoundResponse({ description: 'Refactoring showcase not found' })
+  async updateRefactoringShowcase(
+    @Param('id') id: string,
+    @Body() dto: UpdateRefactoringShowcaseDto,
+  ) {
+    const showcase = await this.updateRefactoringShowcaseUseCase.execute({
+      id,
+      ...dto,
+    });
     const data = this.refactoringShowcaseMapper.toDetailDto(showcase);
 
     return {
