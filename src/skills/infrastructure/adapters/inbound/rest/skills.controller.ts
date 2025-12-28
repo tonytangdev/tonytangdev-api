@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   UseGuards,
   NotFoundException,
@@ -24,6 +25,8 @@ import { CreateSkillUseCase } from '../../../../application/ports/inbound/create
 import { CreateSkillCategoryUseCase } from '../../../../application/ports/inbound/create-skill-category.use-case';
 import { UpdateSkillUseCase } from '../../../../application/ports/inbound/update-skill.use-case';
 import { UpdateSkillCategoryUseCase } from '../../../../application/ports/inbound/update-skill-category.use-case';
+import { DeleteSkillUseCase } from '../../../../application/ports/inbound/delete-skill.use-case';
+import { DeleteSkillCategoryUseCase } from '../../../../application/ports/inbound/delete-skill-category.use-case';
 import { SkillMapper } from '../mappers/skill.mapper';
 import { SkillCategoryResponseDto } from './dto/skill-category-response.dto';
 import { SkillResponseDto } from './dto/skill-response.dto';
@@ -44,6 +47,8 @@ export class SkillsController {
     private readonly createSkillCategoryUseCase: CreateSkillCategoryUseCase,
     private readonly updateSkillUseCase: UpdateSkillUseCase,
     private readonly updateSkillCategoryUseCase: UpdateSkillCategoryUseCase,
+    private readonly deleteSkillUseCase: DeleteSkillUseCase,
+    private readonly deleteSkillCategoryUseCase: DeleteSkillCategoryUseCase,
     private readonly skillMapper: SkillMapper,
   ) {}
 
@@ -215,5 +220,32 @@ export class SkillsController {
     });
     const data = this.skillMapper.toCategoryWithSkillsDto(category, []);
     return { data, meta: {} };
+  }
+
+  @Delete(':id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Delete a skill' })
+  @ApiResponse({ status: 200, description: 'Skill deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid API key' })
+  @ApiResponse({ status: 404, description: 'Skill not found' })
+  @ApiParam({ name: 'id', description: 'Skill ID' })
+  @ApiBearerAuth('api-key')
+  async deleteSkill(@Param('id') id: string) {
+    await this.deleteSkillUseCase.execute({ id });
+    return { data: null, meta: {} };
+  }
+
+  @Delete('categories/:id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Delete a skill category' })
+  @ApiResponse({ status: 200, description: 'Category deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Category has skills' })
+  @ApiResponse({ status: 401, description: 'Invalid API key' })
+  @ApiResponse({ status: 404, description: 'Category not found' })
+  @ApiParam({ name: 'id', description: 'Category ID' })
+  @ApiBearerAuth('api-key')
+  async deleteCategory(@Param('id') id: string) {
+    await this.deleteSkillCategoryUseCase.execute({ id });
+    return { data: null, meta: {} };
   }
 }

@@ -15,6 +15,8 @@ import { CreateSkillUseCase } from './application/ports/inbound/create-skill.use
 import { CreateSkillCategoryUseCase } from './application/ports/inbound/create-skill-category.use-case';
 import { UpdateSkillUseCase } from './application/ports/inbound/update-skill.use-case';
 import { UpdateSkillCategoryUseCase } from './application/ports/inbound/update-skill-category.use-case';
+import { DeleteSkillUseCase } from './application/ports/inbound/delete-skill.use-case';
+import { DeleteSkillCategoryUseCase } from './application/ports/inbound/delete-skill-category.use-case';
 
 // Application ports (outbound)
 import { SkillRepositoryPort } from './application/ports/outbound/skill.repository.port';
@@ -28,6 +30,8 @@ import { CreateSkillService } from './application/services/create-skill.service'
 import { CreateSkillCategoryService } from './application/services/create-skill-category.service';
 import { UpdateSkillService } from './application/services/update-skill.service';
 import { UpdateSkillCategoryService } from './application/services/update-skill-category.service';
+import { DeleteSkillService } from './application/services/delete-skill.service';
+import { DeleteSkillCategoryService } from './application/services/delete-skill-category.service';
 
 // Infrastructure adapters (outbound) - In-Memory
 import { InMemorySkillRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-skill.repository';
@@ -81,6 +85,11 @@ export class SkillsModule {
         {
           provide: UpdateSkillCategoryUseCase,
           useClass: UpdateSkillCategoryService,
+        },
+        { provide: DeleteSkillUseCase, useClass: DeleteSkillService },
+        {
+          provide: DeleteSkillCategoryUseCase,
+          useClass: DeleteSkillCategoryService,
         },
         { provide: SkillRepositoryPort, useClass: InMemorySkillRepository },
         {
@@ -165,6 +174,11 @@ export class SkillsModule {
         {
           provide: UpdateSkillCategoryUseCase,
           useClass: UpdateSkillCategoryService,
+        },
+        { provide: DeleteSkillUseCase, useClass: DeleteSkillService },
+        {
+          provide: DeleteSkillCategoryUseCase,
+          useClass: DeleteSkillCategoryService,
         },
 
         // Outbound adapters (repositories)

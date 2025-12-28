@@ -739,4 +739,213 @@ describe('Skills API (e2e)', () => {
         .expect(400);
     });
   });
+
+  describe('DELETE /api/v1/skills/:id', () => {
+    const validApiKey = 'test-api-key';
+    let existingCategoryId: string;
+    let skillIdToDelete: string;
+
+    beforeEach(async () => {
+      // Get existing category ID
+      const categoriesRes = await request(app.getHttpServer()).get(
+        '/api/v1/skills',
+      );
+      existingCategoryId = categoriesRes.body.data[0].id;
+
+      // Create a skill to delete
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: `Test Delete Skill ${Date.now()}`,
+          categoryId: existingCategoryId,
+          proficiency: 'beginner',
+          isHighlighted: false,
+        });
+      skillIdToDelete = createRes.body.data.id;
+    });
+
+    it('should delete skill successfully with valid API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/skills/${skillIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data', null);
+          expect(res.body).toHaveProperty('meta');
+        });
+    });
+
+    it('should reject delete without API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/skills/${skillIdToDelete}`)
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject delete with invalid API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/skills/${skillIdToDelete}`)
+        .set('x-api-key', 'wrong-key')
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should return 404 for non-existent skill', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/skills/550e8400-e29b-41d4-a716-446655440000')
+        .set('x-api-key', validApiKey)
+        .expect(404)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 404);
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should actually remove the skill from database', async () => {
+      // Delete the skill
+      await request(app.getHttpServer())
+        .delete(`/api/v1/skills/${skillIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200);
+
+      // Verify it's gone by trying to delete again
+      return request(app.getHttpServer())
+        .delete(`/api/v1/skills/${skillIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(404);
+    });
+  });
+
+  describe('DELETE /api/v1/skills/categories/:id', () => {
+    const validApiKey = 'test-api-key';
+    let categoryIdToDelete: string;
+
+    beforeEach(async () => {
+      // Create a category to delete
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/skills/categories')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: `Test Delete Category ${Date.now()}`,
+        });
+      categoryIdToDelete = createRes.body.data.id;
+    });
+
+    it('should delete category successfully when no skills exist', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/skills/categories/${categoryIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data', null);
+          expect(res.body).toHaveProperty('meta');
+        });
+    });
+
+    it('should reject delete without API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/skills/categories/${categoryIdToDelete}`)
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject delete with invalid API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/skills/categories/${categoryIdToDelete}`)
+        .set('x-api-key', 'wrong-key')
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should return 404 for non-existent category', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/skills/categories/550e8400-e29b-41d4-a716-446655440000')
+        .set('x-api-key', validApiKey)
+        .expect(404)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 404);
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should reject deletion when category has skills', async () => {
+      // Create a skill in this category
+      await request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: `Skill in Category ${Date.now()}`,
+          categoryId: categoryIdToDelete,
+          proficiency: 'beginner',
+          isHighlighted: false,
+        });
+
+      // Try to delete category
+      return request(app.getHttpServer())
+        .delete(`/api/v1/skills/categories/${categoryIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+          expect(res.body.message).toContain('Cannot delete category');
+          expect(res.body.message).toContain('skill(s)');
+        });
+    });
+
+    it('should actually remove the category from database', async () => {
+      // Delete the category
+      await request(app.getHttpServer())
+        .delete(`/api/v1/skills/categories/${categoryIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200);
+
+      // Verify it's gone by trying to delete again
+      return request(app.getHttpServer())
+        .delete(`/api/v1/skills/categories/${categoryIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(404);
+    });
+
+    it('should allow deletion after all skills are removed', async () => {
+      // Create a skill in this category
+      const skillRes = await request(app.getHttpServer())
+        .post('/api/v1/skills')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: `Temp Skill ${Date.now()}`,
+          categoryId: categoryIdToDelete,
+          proficiency: 'beginner',
+          isHighlighted: false,
+        });
+
+      // Verify category deletion is blocked
+      await request(app.getHttpServer())
+        .delete(`/api/v1/skills/categories/${categoryIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(400);
+
+      // Delete the skill
+      await request(app.getHttpServer())
+        .delete(`/api/v1/skills/${skillRes.body.data.id}`)
+        .set('x-api-key', validApiKey)
+        .expect(200);
+
+      // Now category deletion should succeed
+      return request(app.getHttpServer())
+        .delete(`/api/v1/skills/categories/${categoryIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200);
+    });
+  });
 });

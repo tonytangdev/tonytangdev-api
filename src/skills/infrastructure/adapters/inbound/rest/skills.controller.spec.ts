@@ -8,6 +8,8 @@ import { CreateSkillUseCase } from '../../../../application/ports/inbound/create
 import { CreateSkillCategoryUseCase } from '../../../../application/ports/inbound/create-skill-category.use-case';
 import { UpdateSkillUseCase } from '../../../../application/ports/inbound/update-skill.use-case';
 import { UpdateSkillCategoryUseCase } from '../../../../application/ports/inbound/update-skill-category.use-case';
+import { DeleteSkillUseCase } from '../../../../application/ports/inbound/delete-skill.use-case';
+import { DeleteSkillCategoryUseCase } from '../../../../application/ports/inbound/delete-skill-category.use-case';
 import { SkillMapper } from '../mappers/skill.mapper';
 import { Skill } from '../../../../domain/entities/skill.entity';
 import { SkillCategory } from '../../../../domain/entities/skill-category.entity';
@@ -21,6 +23,8 @@ describe('SkillsController', () => {
   let getHighlightedSkillsUseCase: jest.Mocked<GetHighlightedSkillsUseCase>;
   let createSkillUseCase: jest.Mocked<CreateSkillUseCase>;
   let createSkillCategoryUseCase: jest.Mocked<CreateSkillCategoryUseCase>;
+  let deleteSkillUseCase: jest.Mocked<DeleteSkillUseCase>;
+  let deleteSkillCategoryUseCase: jest.Mocked<DeleteSkillCategoryUseCase>;
 
   beforeEach(async () => {
     const mockGetSkillsUseCase = {
@@ -51,6 +55,14 @@ describe('SkillsController', () => {
       execute: jest.fn(),
     };
 
+    const mockDeleteSkillUseCase = {
+      execute: jest.fn(),
+    };
+
+    const mockDeleteSkillCategoryUseCase = {
+      execute: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SkillsController],
       providers: [
@@ -73,6 +85,11 @@ describe('SkillsController', () => {
           provide: UpdateSkillCategoryUseCase,
           useValue: mockUpdateSkillCategoryUseCase,
         },
+        { provide: DeleteSkillUseCase, useValue: mockDeleteSkillUseCase },
+        {
+          provide: DeleteSkillCategoryUseCase,
+          useValue: mockDeleteSkillCategoryUseCase,
+        },
         SkillMapper,
       ],
     })
@@ -86,6 +103,8 @@ describe('SkillsController', () => {
     getHighlightedSkillsUseCase = module.get(GetHighlightedSkillsUseCase);
     createSkillUseCase = module.get(CreateSkillUseCase);
     createSkillCategoryUseCase = module.get(CreateSkillCategoryUseCase);
+    deleteSkillUseCase = module.get(DeleteSkillUseCase);
+    deleteSkillCategoryUseCase = module.get(DeleteSkillCategoryUseCase);
   });
 
   it('should be defined', () => {
@@ -392,6 +411,34 @@ describe('SkillsController', () => {
 
       expect(createSkillCategoryUseCase.execute).toHaveBeenCalledWith(dto);
       expect(result.data.slug).toBe('devops--cicd');
+    });
+  });
+
+  describe('deleteSkill', () => {
+    it('should delete a skill successfully', async () => {
+      deleteSkillUseCase.execute.mockResolvedValue(undefined);
+
+      const result = await controller.deleteSkill('skill-123');
+
+      expect(deleteSkillUseCase.execute).toHaveBeenCalledWith({
+        id: 'skill-123',
+      });
+      expect(result.data).toBeNull();
+      expect(result.meta).toEqual({});
+    });
+  });
+
+  describe('deleteCategory', () => {
+    it('should delete a category successfully', async () => {
+      deleteSkillCategoryUseCase.execute.mockResolvedValue(undefined);
+
+      const result = await controller.deleteCategory('cat-123');
+
+      expect(deleteSkillCategoryUseCase.execute).toHaveBeenCalledWith({
+        id: 'cat-123',
+      });
+      expect(result.data).toBeNull();
+      expect(result.meta).toEqual({});
     });
   });
 });

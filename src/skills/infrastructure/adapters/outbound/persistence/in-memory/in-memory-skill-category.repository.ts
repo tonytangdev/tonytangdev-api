@@ -69,4 +69,12 @@ export class InMemorySkillCategoryRepository extends SkillCategoryRepositoryPort
     );
     return Promise.resolve(category || null);
   }
+
+  async delete(id: string): Promise<void> {
+    const index = this.categories.findIndex((c) => c.id === id);
+    if (index !== -1) {
+      this.categories.splice(index, 1);
+    }
+    return Promise.resolve();
+  }
 }

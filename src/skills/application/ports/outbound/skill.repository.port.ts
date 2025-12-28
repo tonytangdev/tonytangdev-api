@@ -13,4 +13,5 @@ export abstract class SkillRepositoryPort {
     name: string,
     excludeId: string,
   ): Promise<Skill | null>;
+  abstract delete(id: string): Promise<void>;
 }

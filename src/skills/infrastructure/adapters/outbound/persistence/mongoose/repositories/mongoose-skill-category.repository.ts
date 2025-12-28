@@ -79,6 +79,10 @@ export class MongooseSkillCategoryRepository extends SkillCategoryRepositoryPort
     return doc ? this.toDomain(doc) : null;
   }
 
+  async delete(id: string): Promise<void> {
+    await this.model.deleteOne({ _id: id }).exec();
+  }
+
   private toDomain(doc: SkillCategoryDocument): SkillCategory {
     return new SkillCategory({
       id: doc._id,

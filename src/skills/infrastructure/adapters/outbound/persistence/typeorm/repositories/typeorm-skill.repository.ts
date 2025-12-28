@@ -77,6 +77,10 @@ export class TypeOrmSkillRepository extends SkillRepositoryPort {
     return skill ? this.toDomain(skill) : null;
   }
 
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
+
   private toDomain(orm: SkillOrm): Skill {
     return new Skill({
       id: orm.id,

@@ -16,4 +16,5 @@ export abstract class SkillCategoryRepositoryPort {
     slug: string,
     excludeId: string,
   ): Promise<SkillCategory | null>;
+  abstract delete(id: string): Promise<void>;
 }

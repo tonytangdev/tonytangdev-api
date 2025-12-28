@@ -67,4 +67,12 @@ export class InMemorySkillRepository extends SkillRepositoryPort {
     );
     return Promise.resolve(skill || null);
   }
+
+  async delete(id: string): Promise<void> {
+    const index = this.skills.findIndex((s) => s.id === id);
+    if (index !== -1) {
+      this.skills.splice(index, 1);
+    }
+    return Promise.resolve();
+  }
 }
