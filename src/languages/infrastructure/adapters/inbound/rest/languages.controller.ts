@@ -1,10 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { GetLanguagesUseCase } from '../../../../application/ports/inbound/get-languages.use-case';
 import { GetHighlightedLanguagesUseCase } from '../../../../application/ports/inbound/get-highlighted-languages.use-case';
 import { GetNativeLanguagesUseCase } from '../../../../application/ports/inbound/get-native-languages.use-case';
+import { CreateLanguageUseCase } from '../../../../application/ports/inbound/create-language.use-case';
 import { LanguageMapper } from '../mappers/language.mapper';
 import { LanguageResponseDto } from './dto/language-response.dto';
+import { CreateLanguageDto } from './dto/create-language.dto';
+import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
 
 @ApiTags('languages')
 @Controller('languages')
@@ -13,6 +22,7 @@ export class LanguagesController {
     private readonly getLanguagesUseCase: GetLanguagesUseCase,
     private readonly getHighlightedLanguagesUseCase: GetHighlightedLanguagesUseCase,
     private readonly getNativeLanguagesUseCase: GetNativeLanguagesUseCase,
+    private readonly createLanguageUseCase: CreateLanguageUseCase,
     private readonly languageMapper: LanguageMapper,
   ) {}
 
@@ -65,5 +75,24 @@ export class LanguagesController {
       data,
       meta: { total: data.length },
     };
+  }
+
+  @Post()
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Create a new language' })
+  @ApiResponse({
+    status: 201,
+    description: 'Language created successfully',
+    type: LanguageResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 401, description: 'Invalid API key' })
+  @ApiResponse({ status: 409, description: 'Language name already exists' })
+  @ApiBody({ type: CreateLanguageDto })
+  @ApiBearerAuth('api-key')
+  async createLanguage(@Body() dto: CreateLanguageDto) {
+    const language = await this.createLanguageUseCase.execute(dto);
+    const data = this.languageMapper.toDto(language);
+    return { data, meta: {} };
   }
 }

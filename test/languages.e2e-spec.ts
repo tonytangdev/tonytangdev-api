@@ -211,4 +211,191 @@ describe('Languages API (e2e)', () => {
         });
     });
   });
+
+  describe('POST /api/v1/languages', () => {
+    const validApiKey = 'test-api-key';
+
+    it('should create a new language with valid data', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/languages')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'German',
+          proficiency: 'professional_working',
+          isNative: false,
+          isHighlighted: true,
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data');
+          expect(res.body).toHaveProperty('meta');
+          expect(res.body.data).toHaveProperty('id');
+          expect(res.body.data.name).toBe('German');
+          expect(res.body.data.proficiency).toBe('professional_working');
+          expect(res.body.data.isNative).toBe(false);
+          expect(res.body.data.isHighlighted).toBe(true);
+          expect(res.body.meta).toEqual({});
+        });
+    });
+
+    it('should create a native language', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/languages')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Japanese',
+          proficiency: 'native',
+          isNative: true,
+          isHighlighted: true,
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.name).toBe('Japanese');
+          expect(res.body.data.isNative).toBe(true);
+          expect(res.body.data.proficiency).toBe('native');
+        });
+    });
+
+    it('should reject request without API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/languages')
+        .send({
+          name: 'Italian',
+          proficiency: 'elementary',
+          isNative: false,
+          isHighlighted: false,
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body).toHaveProperty('message');
+        });
+    });
+
+    it('should reject request with invalid API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/languages')
+        .set('x-api-key', 'invalid-key')
+        .send({
+          name: 'Portuguese',
+          proficiency: 'limited_working',
+          isNative: false,
+          isHighlighted: false,
+        })
+        .expect(401);
+    });
+
+    it('should reject duplicate language name', async () => {
+      const languageData = {
+        name: 'Chinese',
+        proficiency: 'elementary',
+        isNative: false,
+        isHighlighted: false,
+      };
+
+      // Create first language
+      await request(app.getHttpServer())
+        .post('/api/v1/languages')
+        .set('x-api-key', validApiKey)
+        .send(languageData)
+        .expect(201);
+
+      // Try to create duplicate
+      return request(app.getHttpServer())
+        .post('/api/v1/languages')
+        .set('x-api-key', validApiKey)
+        .send(languageData)
+        .expect(409)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 409);
+          expect(res.body).toHaveProperty('message');
+          expect(res.body.message).toContain('already exists');
+        });
+    });
+
+    it('should reject invalid proficiency level', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/languages')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Korean',
+          proficiency: 'invalid-level',
+          isNative: false,
+          isHighlighted: false,
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+          expect(res.body).toHaveProperty('message');
+        });
+    });
+
+    it('should reject missing required fields', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/languages')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Arabic',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+        });
+    });
+
+    it('should include created language in GET response', async () => {
+      const languageData = {
+        name: 'Swedish',
+        proficiency: 'limited_working',
+        isNative: false,
+        isHighlighted: true,
+      };
+
+      // Create language
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/languages')
+        .set('x-api-key', validApiKey)
+        .send(languageData)
+        .expect(201);
+
+      const createdLanguageId = createRes.body.data.id;
+
+      // Verify it appears in GET /api/v1/languages
+      const getRes = await request(app.getHttpServer())
+        .get('/api/v1/languages')
+        .expect(200);
+
+      const foundLanguage = getRes.body.data.find(
+        (lang: any) => lang.id === createdLanguageId,
+      );
+      expect(foundLanguage).toBeDefined();
+      expect(foundLanguage.name).toBe('Swedish');
+    });
+
+    it('should accept all valid proficiency levels', async () => {
+      const proficiencyLevels = [
+        'elementary',
+        'limited_working',
+        'professional_working',
+        'full_professional',
+        'native',
+      ];
+
+      for (const proficiency of proficiencyLevels) {
+        await request(app.getHttpServer())
+          .post('/api/v1/languages')
+          .set('x-api-key', validApiKey)
+          .send({
+            name: `Language-${proficiency}`,
+            proficiency,
+            isNative: proficiency === 'native',
+            isHighlighted: false,
+          })
+          .expect(201)
+          .expect((res) => {
+            expect(res.body.data.proficiency).toBe(proficiency);
+          });
+      }
+    });
+  });
 });
