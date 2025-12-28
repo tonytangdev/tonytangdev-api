@@ -5,6 +5,7 @@ import { TestAppModule } from './test-app.module';
 
 describe('Education API (e2e)', () => {
   let app: INestApplication;
+  const validApiKey = 'test-api-key';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -234,8 +235,6 @@ describe('Education API (e2e)', () => {
   });
 
   describe('POST /api/v1/education', () => {
-    const validApiKey = 'test-api-key';
-
     it('should create education with required fields and apply defaults', () => {
       const educationName = `MIT ${Date.now()}`;
       return request(app.getHttpServer())
@@ -586,6 +585,313 @@ describe('Education API (e2e)', () => {
           expect(res.body.data.isHighlighted).toBe(false);
           expect(res.body.data.status).toBe('completed');
         });
+    });
+  });
+
+  describe('PUT /api/v1/education/:id', () => {
+    let createdEducationId: string;
+    let originalInstitution: string;
+
+    beforeEach(async () => {
+      // Create education for update tests with unique institution name
+      originalInstitution = `Update Test University ${Date.now()}`;
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: originalInstitution,
+          degreeType: 'master',
+          fieldOfStudy: 'Computer Science',
+          startDate: '2020-01-01',
+          endDate: '2022-06-01',
+          description: 'Original description',
+          location: 'Test Location',
+        })
+        .expect(201);
+
+      createdEducationId = createRes.body.data.id;
+    });
+
+    it('should update education with valid data', async () => {
+      const updateData = {
+        institution: originalInstitution,
+        degreeType: 'master',
+        fieldOfStudy: 'Computer Science',
+        startDate: '2020-01-01',
+        endDate: '2022-06-01',
+        description: 'Updated description',
+        location: 'New Location',
+        status: 'completed',
+        isHighlighted: true,
+      };
+
+      const updateRes = await request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .set('x-api-key', validApiKey)
+        .send(updateData)
+        .expect(200);
+
+      expect(updateRes.body.data).toHaveProperty('id', createdEducationId);
+      expect(updateRes.body.data).toHaveProperty(
+        'description',
+        'Updated description',
+      );
+      expect(updateRes.body.data).toHaveProperty('location', 'New Location');
+      expect(updateRes.body.data).toHaveProperty('isHighlighted', true);
+    });
+
+    it('should preserve order field when updating', async () => {
+      // Get original order
+      const getRes = await request(app.getHttpServer())
+        .get('/api/v1/education')
+        .expect(200);
+
+      const originalEducation = getRes.body.data.find(
+        (edu: any) => edu.id === createdEducationId,
+      );
+      const originalOrder = originalEducation.order;
+
+      // Update education
+      await request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: originalInstitution,
+          degreeType: 'master',
+          fieldOfStudy: 'Computer Science',
+          startDate: '2020-01-01',
+          endDate: '2022-06-01',
+          description: 'Updated',
+          location: 'Test',
+          status: 'completed',
+          isHighlighted: false,
+        })
+        .expect(200);
+
+      // Verify order preserved
+      const getRes2 = await request(app.getHttpServer())
+        .get('/api/v1/education')
+        .expect(200);
+
+      const updatedEducation = getRes2.body.data.find(
+        (edu: any) => edu.id === createdEducationId,
+      );
+      expect(updatedEducation.order).toBe(originalOrder);
+    });
+
+    it('should return 404 when updating non-existent education', () => {
+      return request(app.getHttpServer())
+        .put('/api/v1/education/nonexistent-id')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Test',
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Test',
+          startDate: '2020-01-01',
+          endDate: '2022-06-01',
+          description: 'Test',
+          location: 'Test',
+          status: 'completed',
+          isHighlighted: false,
+        })
+        .expect(404);
+    });
+
+    it('should return 409 on duplicate composite key', async () => {
+      // Create another education
+      await request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Duplicate Test University',
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Physics',
+          startDate: '2018-01-01',
+          endDate: '2022-06-01',
+          description: 'Another education',
+          location: 'Test',
+        })
+        .expect(201);
+
+      // Try to update to same composite key
+      return request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Duplicate Test University',
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Physics',
+          startDate: '2020-01-01',
+          endDate: '2022-06-01',
+          description: 'Duplicate',
+          location: 'Test',
+          status: 'completed',
+          isHighlighted: false,
+        })
+        .expect(409);
+    });
+
+    it('should allow idempotent updates with same composite key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: originalInstitution,
+          degreeType: 'master',
+          fieldOfStudy: 'Computer Science',
+          startDate: '2020-01-01',
+          endDate: '2022-06-01',
+          description: 'Same composite key',
+          location: 'Test',
+          status: 'completed',
+          isHighlighted: false,
+        })
+        .expect(200);
+    });
+
+    it('should return 401 without API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .send({
+          institution: 'Test',
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Test',
+          startDate: '2020-01-01',
+          endDate: '2022-06-01',
+          description: 'Test',
+          location: 'Test',
+          status: 'completed',
+          isHighlighted: false,
+        })
+        .expect(401);
+    });
+
+    it('should return 401 with invalid API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .set('x-api-key', 'invalid-key')
+        .send({
+          institution: 'Test',
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Test',
+          startDate: '2020-01-01',
+          endDate: '2022-06-01',
+          description: 'Test',
+          location: 'Test',
+          status: 'completed',
+          isHighlighted: false,
+        })
+        .expect(401);
+    });
+
+    it('should validate status and endDate consistency for IN_PROGRESS', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: originalInstitution,
+          degreeType: 'master',
+          fieldOfStudy: 'Computer Science',
+          startDate: '2023-01-01',
+          endDate: '2024-12-31',
+          description: 'Test',
+          location: 'Test',
+          status: 'in_progress',
+          isHighlighted: false,
+        })
+        .expect(400);
+    });
+
+    it('should validate status and endDate consistency for COMPLETED', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: originalInstitution,
+          degreeType: 'master',
+          fieldOfStudy: 'Computer Science',
+          startDate: '2020-01-01',
+          description: 'Test',
+          location: 'Test',
+          status: 'completed',
+          isHighlighted: false,
+        })
+        .expect(400);
+    });
+
+    it('should update achievements field', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: originalInstitution,
+          degreeType: 'master',
+          fieldOfStudy: 'Computer Science',
+          startDate: '2020-01-01',
+          endDate: '2022-06-01',
+          description: 'Test',
+          location: 'Test',
+          status: 'completed',
+          achievements: ['New Achievement', 'Another One'],
+          isHighlighted: false,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.achievements).toEqual([
+            'New Achievement',
+            'Another One',
+          ]);
+        });
+    });
+
+    it('should update to IN_PROGRESS with null endDate', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: originalInstitution,
+          degreeType: 'master',
+          fieldOfStudy: 'Computer Science',
+          startDate: '2023-01-01',
+          description: 'Now in progress',
+          location: 'Test',
+          status: 'in_progress',
+          isHighlighted: false,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.status).toBe('in_progress');
+          expect(res.body.data.endDate).toBeNull();
+        });
+    });
+
+    it('should include updated education in GET response', async () => {
+      await request(app.getHttpServer())
+        .put(`/api/v1/education/${createdEducationId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: originalInstitution,
+          degreeType: 'master',
+          fieldOfStudy: 'Computer Science',
+          startDate: '2020-01-01',
+          endDate: '2022-06-01',
+          description: 'Verified in GET',
+          location: 'Test',
+          status: 'completed',
+          isHighlighted: true,
+        })
+        .expect(200);
+
+      const getRes = await request(app.getHttpServer())
+        .get('/api/v1/education')
+        .expect(200);
+
+      const found = getRes.body.data.find(
+        (edu: any) => edu.id === createdEducationId,
+      );
+      expect(found).toBeDefined();
+      expect(found.description).toBe('Verified in GET');
+      expect(found.isHighlighted).toBe(true);
     });
   });
 });

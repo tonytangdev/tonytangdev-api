@@ -4,6 +4,7 @@ import { GetEducationUseCase } from '../../../../application/ports/inbound/get-e
 import { GetHighlightedEducationUseCase } from '../../../../application/ports/inbound/get-highlighted-education.use-case';
 import { GetInProgressEducationUseCase } from '../../../../application/ports/inbound/get-in-progress-education.use-case';
 import { CreateEducationUseCase } from '../../../../application/ports/inbound/create-education.use-case';
+import { UpdateEducationUseCase } from '../../../../application/ports/inbound/update-education.use-case';
 import { EducationMapper } from '../mappers/education.mapper';
 import { Education } from '../../../../domain/entities/education.entity';
 import { DegreeType } from '../../../../domain/value-objects/degree-type.vo';
@@ -16,6 +17,7 @@ describe('EducationController', () => {
   let getHighlightedEducationUseCase: jest.Mocked<GetHighlightedEducationUseCase>;
   let getInProgressEducationUseCase: jest.Mocked<GetInProgressEducationUseCase>;
   let createEducationUseCase: jest.Mocked<CreateEducationUseCase>;
+  let updateEducationUseCase: jest.Mocked<UpdateEducationUseCase>;
 
   beforeEach(async () => {
     const mockGetEducationUseCase = {
@@ -28,6 +30,9 @@ describe('EducationController', () => {
       execute: jest.fn(),
     };
     const mockCreateEducationUseCase = {
+      execute: jest.fn(),
+    };
+    const mockUpdateEducationUseCase = {
       execute: jest.fn(),
     };
 
@@ -47,6 +52,10 @@ describe('EducationController', () => {
           provide: CreateEducationUseCase,
           useValue: mockCreateEducationUseCase,
         },
+        {
+          provide: UpdateEducationUseCase,
+          useValue: mockUpdateEducationUseCase,
+        },
         EducationMapper,
       ],
     })
@@ -59,6 +68,7 @@ describe('EducationController', () => {
     getHighlightedEducationUseCase = module.get(GetHighlightedEducationUseCase);
     getInProgressEducationUseCase = module.get(GetInProgressEducationUseCase);
     createEducationUseCase = module.get(CreateEducationUseCase);
+    updateEducationUseCase = module.get(UpdateEducationUseCase);
   });
 
   describe('getEducation', () => {
@@ -325,6 +335,137 @@ describe('EducationController', () => {
       expect(result).toHaveProperty('meta');
       expect(result.meta).toEqual({});
       expect(typeof result.data).toBe('object');
+    });
+  });
+
+  describe('updateEducation', () => {
+    it('should update an education record and return response', async () => {
+      const dto = {
+        institution: 'MIT',
+        degreeType: DegreeType.MASTER,
+        fieldOfStudy: 'Computer Science',
+        startDate: '2020-01-15',
+        endDate: '2022-06-30',
+        description: 'Updated description',
+        location: 'Cambridge, MA',
+        status: EducationStatus.COMPLETED,
+        isHighlighted: true,
+      };
+
+      const updatedEducation = new Education({
+        id: 'edu-123',
+        institution: 'MIT',
+        degreeType: DegreeType.MASTER,
+        fieldOfStudy: 'Computer Science',
+        startDate: new Date('2020-01-15'),
+        endDate: new Date('2022-06-30'),
+        description: 'Updated description',
+        location: 'Cambridge, MA',
+        status: EducationStatus.COMPLETED,
+        achievements: [],
+        isHighlighted: true,
+        order: 5,
+      });
+
+      updateEducationUseCase.execute.mockResolvedValue(updatedEducation);
+
+      const result = await controller.updateEducation('edu-123', dto);
+
+      expect(updateEducationUseCase.execute).toHaveBeenCalledWith({
+        id: 'edu-123',
+        ...dto,
+      });
+      expect(result.data).toHaveProperty('id', 'edu-123');
+      expect(result.data).toHaveProperty('institution', 'MIT');
+      expect(result.data).toHaveProperty('description', 'Updated description');
+      expect(result.data).toHaveProperty('isHighlighted', true);
+      expect(result.meta).toEqual({});
+    });
+
+    it('should update education with minimal fields', async () => {
+      const dto = {
+        institution: 'Stanford',
+        degreeType: DegreeType.BACHELOR,
+        fieldOfStudy: 'Physics',
+        startDate: '2018-09-01',
+        description: 'Minimal update',
+        location: 'Stanford, CA',
+        status: EducationStatus.IN_PROGRESS,
+        isHighlighted: false,
+      };
+
+      const updatedEducation = new Education({
+        id: 'edu-456',
+        institution: 'Stanford',
+        degreeType: DegreeType.BACHELOR,
+        fieldOfStudy: 'Physics',
+        startDate: new Date('2018-09-01'),
+        endDate: null,
+        description: 'Minimal update',
+        location: 'Stanford, CA',
+        status: EducationStatus.IN_PROGRESS,
+        achievements: [],
+        isHighlighted: false,
+        order: 3,
+      });
+
+      updateEducationUseCase.execute.mockResolvedValue(updatedEducation);
+
+      const result = await controller.updateEducation('edu-456', dto);
+
+      expect(updateEducationUseCase.execute).toHaveBeenCalledWith({
+        id: 'edu-456',
+        ...dto,
+      });
+      expect(result.data).toHaveProperty('status', 'in_progress');
+      expect(result.data).toHaveProperty('endDate', null);
+    });
+
+    it('should map updated entity to DTO correctly', async () => {
+      const dto = {
+        institution: 'Harvard',
+        degreeType: DegreeType.DOCTORATE,
+        fieldOfStudy: 'Mathematics',
+        startDate: '2015-01-01',
+        endDate: '2020-12-31',
+        description: 'Updated PhD',
+        location: 'Cambridge, MA',
+        status: EducationStatus.COMPLETED,
+        achievements: ['Best Dissertation'],
+        isHighlighted: true,
+      };
+
+      const updatedEducation = new Education({
+        id: 'edu-789',
+        institution: 'Harvard',
+        degreeType: DegreeType.DOCTORATE,
+        fieldOfStudy: 'Mathematics',
+        startDate: new Date('2015-01-01'),
+        endDate: new Date('2020-12-31'),
+        description: 'Updated PhD',
+        location: 'Cambridge, MA',
+        status: EducationStatus.COMPLETED,
+        achievements: ['Best Dissertation'],
+        isHighlighted: true,
+        order: 2,
+      });
+
+      updateEducationUseCase.execute.mockResolvedValue(updatedEducation);
+
+      const result = await controller.updateEducation('edu-789', dto);
+
+      expect(result.data).toHaveProperty('id');
+      expect(result.data).toHaveProperty('institution');
+      expect(result.data).toHaveProperty('degreeType');
+      expect(result.data).toHaveProperty('fieldOfStudy');
+      expect(result.data).toHaveProperty('startDate');
+      expect(result.data).toHaveProperty('endDate');
+      expect(result.data).toHaveProperty('description');
+      expect(result.data).toHaveProperty('location');
+      expect(result.data).toHaveProperty('status');
+      expect(result.data).toHaveProperty('achievements');
+      expect(result.data).toHaveProperty('isHighlighted');
+      expect(result.data).toHaveProperty('order');
     });
   });
 });

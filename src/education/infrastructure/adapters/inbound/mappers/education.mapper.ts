@@ -17,6 +17,7 @@ export class EducationMapper {
       location: education.location,
       status: education.status,
       isHighlighted: education.isHighlighted,
+      order: education.order,
     };
   }
 

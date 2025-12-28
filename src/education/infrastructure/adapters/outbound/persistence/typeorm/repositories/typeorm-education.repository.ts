@@ -68,6 +68,39 @@ export class TypeOrmEducationRepository extends EducationRepositoryPort {
     return result?.maxOrder ?? 0;
   }
 
+  async findById(id: string): Promise<Education | null> {
+    const orm = await this.repository.findOne({ where: { id } });
+    return orm ? this.toDomain(orm) : null;
+  }
+
+  async findByCompositeKeyExcludingId(params: {
+    institution: string;
+    degreeType: DegreeType;
+    fieldOfStudy: string;
+    excludeId: string;
+  }): Promise<Education | null> {
+    const orm = await this.repository
+      .createQueryBuilder('education')
+      .where('education.institution = :institution', {
+        institution: params.institution,
+      })
+      .andWhere('education.degreeType = :degreeType', {
+        degreeType: params.degreeType,
+      })
+      .andWhere('education.fieldOfStudy = :fieldOfStudy', {
+        fieldOfStudy: params.fieldOfStudy,
+      })
+      .andWhere('education.id != :excludeId', { excludeId: params.excludeId })
+      .getOne();
+    return orm ? this.toDomain(orm) : null;
+  }
+
+  async update(education: Education): Promise<Education> {
+    const orm = this.toOrm(education);
+    const saved = await this.repository.save(orm);
+    return this.toDomain(saved);
+  }
+
   private toDomain(orm: EducationOrm): Education {
     return new Education({
       id: orm.id,

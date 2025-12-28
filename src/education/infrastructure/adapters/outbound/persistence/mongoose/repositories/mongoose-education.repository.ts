@@ -82,6 +82,51 @@ export class MongooseEducationRepository extends EducationRepositoryPort {
     return doc?.order ?? 0;
   }
 
+  async findById(id: string): Promise<Education | null> {
+    const doc = await this.model.findById(id).exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async findByCompositeKeyExcludingId(params: {
+    institution: string;
+    degreeType: DegreeType;
+    fieldOfStudy: string;
+    excludeId: string;
+  }): Promise<Education | null> {
+    const doc = await this.model
+      .findOne({
+        institution: params.institution,
+        degreeType: params.degreeType,
+        fieldOfStudy: params.fieldOfStudy,
+        _id: { $ne: params.excludeId },
+      })
+      .exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async update(education: Education): Promise<Education> {
+    const doc = await this.model
+      .findByIdAndUpdate(
+        education.id,
+        {
+          institution: education.institution,
+          degreeType: education.degreeType,
+          fieldOfStudy: education.fieldOfStudy,
+          startDate: education.startDate,
+          endDate: education.endDate,
+          description: education.description,
+          achievements: education.achievements,
+          location: education.location,
+          status: education.status,
+          isHighlighted: education.isHighlighted,
+          order: education.order,
+        },
+        { new: true },
+      )
+      .exec();
+    return this.toDomain(doc!);
+  }
+
   private toDomain(doc: EducationDocument): Education {
     return new Education({
       id: doc._id,

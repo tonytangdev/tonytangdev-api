@@ -57,4 +57,33 @@ export class InMemoryEducationRepository extends EducationRepositoryPort {
     const maxOrder = Math.max(...this.educations.map((edu) => edu.order));
     return Promise.resolve(maxOrder);
   }
+
+  async findById(id: string): Promise<Education | null> {
+    const found = this.educations.find((edu) => edu.id === id);
+    return Promise.resolve(found || null);
+  }
+
+  async findByCompositeKeyExcludingId(params: {
+    institution: string;
+    degreeType: DegreeType;
+    fieldOfStudy: string;
+    excludeId: string;
+  }): Promise<Education | null> {
+    const found = this.educations.find(
+      (edu) =>
+        edu.institution === params.institution &&
+        edu.degreeType === params.degreeType &&
+        edu.fieldOfStudy === params.fieldOfStudy &&
+        edu.id !== params.excludeId,
+    );
+    return Promise.resolve(found || null);
+  }
+
+  async update(education: Education): Promise<Education> {
+    const index = this.educations.findIndex((edu) => edu.id === education.id);
+    if (index !== -1) {
+      this.educations[index] = education;
+    }
+    return Promise.resolve(education);
+  }
 }

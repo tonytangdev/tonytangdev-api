@@ -12,4 +12,12 @@ export abstract class EducationRepositoryPort {
     fieldOfStudy: string,
   ): Promise<Education | null>;
   abstract getMaxOrder(): Promise<number>;
+  abstract findById(id: string): Promise<Education | null>;
+  abstract findByCompositeKeyExcludingId(params: {
+    institution: string;
+    degreeType: DegreeType;
+    fieldOfStudy: string;
+    excludeId: string;
+  }): Promise<Education | null>;
+  abstract update(education: Education): Promise<Education>;
 }
