@@ -36,6 +36,30 @@ export class TypeOrmExperienceRepository extends ExperienceRepositoryPort {
     return experience ? this.toDomain(experience) : null;
   }
 
+  async create(experience: Experience): Promise<Experience> {
+    const orm = this.toOrm(experience);
+    const saved = await this.repository.save(orm);
+    return this.toDomain(saved);
+  }
+
+  async findByCompanyAndTitle(
+    company: string,
+    title: string,
+  ): Promise<Experience | null> {
+    const experience = await this.repository.findOne({
+      where: { company, title },
+    });
+    return experience ? this.toDomain(experience) : null;
+  }
+
+  async getMaxOrder(): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder('experience')
+      .select('MAX(experience.order)', 'maxOrder')
+      .getRawOne<{ maxOrder: number | null }>();
+    return result?.maxOrder ?? 0;
+  }
+
   private toDomain(orm: ExperienceOrm): Experience {
     return new Experience({
       id: orm.id,
@@ -51,5 +75,22 @@ export class TypeOrmExperienceRepository extends ExperienceRepositoryPort {
       isHighlighted: orm.isHighlighted,
       order: orm.order,
     });
+  }
+
+  private toOrm(domain: Experience): ExperienceOrm {
+    const orm = new ExperienceOrm();
+    orm.id = domain.id;
+    orm.company = domain.company;
+    orm.title = domain.title;
+    orm.startDate = domain.startDate;
+    orm.endDate = domain.endDate;
+    orm.description = domain.description;
+    orm.technologies = domain.technologies;
+    orm.achievements = domain.achievements;
+    orm.location = domain.location;
+    orm.isCurrent = domain.isCurrent;
+    orm.isHighlighted = domain.isHighlighted;
+    orm.order = domain.order;
+    return orm;
   }
 }

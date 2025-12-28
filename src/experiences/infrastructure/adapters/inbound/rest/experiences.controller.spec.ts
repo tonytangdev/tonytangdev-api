@@ -4,14 +4,17 @@ import { ExperiencesController } from './experiences.controller';
 import { GetExperiencesUseCase } from '../../../../application/ports/inbound/get-experiences.use-case';
 import { GetHighlightedExperiencesUseCase } from '../../../../application/ports/inbound/get-highlighted-experiences.use-case';
 import { GetCurrentExperienceUseCase } from '../../../../application/ports/inbound/get-current-experience.use-case';
+import { CreateExperienceUseCase } from '../../../../application/ports/inbound/create-experience.use-case';
 import { ExperienceMapper } from '../mappers/experience.mapper';
 import { Experience } from '../../../../domain/entities/experience.entity';
+import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
 
 describe('ExperiencesController', () => {
   let controller: ExperiencesController;
   let getExperiencesUseCase: jest.Mocked<GetExperiencesUseCase>;
   let getHighlightedExperiencesUseCase: jest.Mocked<GetHighlightedExperiencesUseCase>;
   let getCurrentExperienceUseCase: jest.Mocked<GetCurrentExperienceUseCase>;
+  let createExperienceUseCase: jest.Mocked<CreateExperienceUseCase>;
 
   beforeEach(async () => {
     const mockGetExperiencesUseCase = {
@@ -23,6 +26,10 @@ describe('ExperiencesController', () => {
     };
 
     const mockGetCurrentExperienceUseCase = {
+      execute: jest.fn(),
+    };
+
+    const mockCreateExperienceUseCase = {
       execute: jest.fn(),
     };
 
@@ -38,9 +45,16 @@ describe('ExperiencesController', () => {
           provide: GetCurrentExperienceUseCase,
           useValue: mockGetCurrentExperienceUseCase,
         },
+        {
+          provide: CreateExperienceUseCase,
+          useValue: mockCreateExperienceUseCase,
+        },
         ExperienceMapper,
       ],
-    }).compile();
+    })
+      .overrideGuard(ApiKeyGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<ExperiencesController>(ExperiencesController);
     getExperiencesUseCase = module.get(GetExperiencesUseCase);
@@ -48,6 +62,7 @@ describe('ExperiencesController', () => {
       GetHighlightedExperiencesUseCase,
     );
     getCurrentExperienceUseCase = module.get(GetCurrentExperienceUseCase);
+    createExperienceUseCase = module.get(CreateExperienceUseCase);
   });
 
   it('should be defined', () => {
@@ -176,6 +191,80 @@ describe('ExperiencesController', () => {
       await expect(controller.getCurrentExperience()).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('createExperience', () => {
+    it('should create experience with required fields', async () => {
+      const dto = {
+        company: 'Anthropic',
+        title: 'Senior Software Engineer',
+        startDate: '2023-01-15',
+        description: 'Building AI applications',
+        technologies: ['TypeScript', 'React'],
+        location: 'San Francisco, CA',
+      };
+
+      const experience = new Experience({
+        id: '123',
+        company: 'Anthropic',
+        title: 'Senior Software Engineer',
+        startDate: new Date('2023-01-15'),
+        endDate: null,
+        description: 'Building AI applications',
+        technologies: ['TypeScript', 'React'],
+        achievements: [],
+        location: 'San Francisco, CA',
+        isCurrent: true,
+        isHighlighted: false,
+        order: 1,
+      });
+
+      createExperienceUseCase.execute.mockResolvedValue(experience);
+
+      const result = await controller.createExperience(dto);
+
+      expect(createExperienceUseCase.execute).toHaveBeenCalledWith(dto);
+      expect(result.data.company).toBe('Anthropic');
+      expect(result.data.title).toBe('Senior Software Engineer');
+      expect(result.data.isCurrent).toBe(true);
+      expect(result.data.isHighlighted).toBe(false);
+      expect(result.meta).toEqual({});
+    });
+
+    it('should create experience with all fields', async () => {
+      const dto = {
+        company: 'Anthropic',
+        title: 'Senior Software Engineer',
+        startDate: '2023-01-15',
+        endDate: '2024-06-30',
+        description: 'Building AI applications',
+        technologies: ['TypeScript', 'React'],
+        achievements: ['Led team of 5', 'Shipped major feature'],
+        location: 'San Francisco, CA',
+      };
+
+      const experience = new Experience({
+        id: '123',
+        company: 'Anthropic',
+        title: 'Senior Software Engineer',
+        startDate: new Date('2023-01-15'),
+        endDate: new Date('2024-06-30'),
+        description: 'Building AI applications',
+        technologies: ['TypeScript', 'React'],
+        achievements: ['Led team of 5', 'Shipped major feature'],
+        location: 'San Francisco, CA',
+        isCurrent: false,
+        isHighlighted: false,
+        order: 1,
+      });
+
+      createExperienceUseCase.execute.mockResolvedValue(experience);
+
+      const result = await controller.createExperience(dto);
+
+      expect(result.data.achievements).toHaveLength(2);
+      expect(result.data.isCurrent).toBe(false);
     });
   });
 });

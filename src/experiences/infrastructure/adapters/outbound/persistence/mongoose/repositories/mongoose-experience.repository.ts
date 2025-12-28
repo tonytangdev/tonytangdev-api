@@ -35,6 +35,42 @@ export class MongooseExperienceRepository extends ExperienceRepositoryPort {
     return doc ? this.toDomain(doc) : null;
   }
 
+  async create(experience: Experience): Promise<Experience> {
+    const doc = new this.model({
+      _id: experience.id,
+      company: experience.company,
+      title: experience.title,
+      startDate: experience.startDate,
+      endDate: experience.endDate,
+      description: experience.description,
+      technologies: experience.technologies,
+      achievements: experience.achievements,
+      location: experience.location,
+      isCurrent: experience.isCurrent,
+      isHighlighted: experience.isHighlighted,
+      order: experience.order,
+    });
+    const saved = await doc.save();
+    return this.toDomain(saved);
+  }
+
+  async findByCompanyAndTitle(
+    company: string,
+    title: string,
+  ): Promise<Experience | null> {
+    const doc = await this.model.findOne({ company, title }).exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async getMaxOrder(): Promise<number> {
+    const doc = await this.model
+      .findOne()
+      .sort({ order: -1 })
+      .select('order')
+      .exec();
+    return doc?.order ?? 0;
+  }
+
   private toDomain(doc: ExperienceDocument): Experience {
     return new Experience({
       id: doc._id,

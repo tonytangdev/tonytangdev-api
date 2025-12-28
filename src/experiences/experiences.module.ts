@@ -11,6 +11,7 @@ import { ExperienceSortingService } from './domain/services/experience-sorting.s
 import { GetExperiencesUseCase } from './application/ports/inbound/get-experiences.use-case';
 import { GetHighlightedExperiencesUseCase } from './application/ports/inbound/get-highlighted-experiences.use-case';
 import { GetCurrentExperienceUseCase } from './application/ports/inbound/get-current-experience.use-case';
+import { CreateExperienceUseCase } from './application/ports/inbound/create-experience.use-case';
 
 // Application ports (outbound)
 import { ExperienceRepositoryPort } from './application/ports/outbound/experience.repository.port';
@@ -19,6 +20,7 @@ import { ExperienceRepositoryPort } from './application/ports/outbound/experienc
 import { GetExperiencesService } from './application/services/get-experiences.service';
 import { GetHighlightedExperiencesService } from './application/services/get-highlighted-experiences.service';
 import { GetCurrentExperienceService } from './application/services/get-current-experience.service';
+import { CreateExperienceService } from './application/services/create-experience.service';
 
 // Infrastructure adapters (outbound) - In-Memory
 import { InMemoryExperienceRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-experience.repository';
@@ -54,6 +56,10 @@ export class ExperiencesModule {
         {
           provide: GetCurrentExperienceUseCase,
           useClass: GetCurrentExperienceService,
+        },
+        {
+          provide: CreateExperienceUseCase,
+          useClass: CreateExperienceService,
         },
         {
           provide: ExperienceRepositoryPort,
@@ -116,6 +122,10 @@ export class ExperiencesModule {
         {
           provide: GetCurrentExperienceUseCase,
           useClass: GetCurrentExperienceService,
+        },
+        {
+          provide: CreateExperienceUseCase,
+          useClass: CreateExperienceService,
         },
 
         // Outbound adapters (repositories)

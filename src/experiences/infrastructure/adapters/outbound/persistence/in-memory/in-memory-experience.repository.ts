@@ -26,4 +26,29 @@ export class InMemoryExperienceRepository extends ExperienceRepositoryPort {
       this.experiences.find((exp) => exp.isCurrent) || null,
     );
   }
+
+  async create(experience: Experience): Promise<Experience> {
+    this.experiences.push(experience);
+    return Promise.resolve(experience);
+  }
+
+  async findByCompanyAndTitle(
+    company: string,
+    title: string,
+  ): Promise<Experience | null> {
+    return Promise.resolve(
+      this.experiences.find(
+        (exp) => exp.company === company && exp.title === title,
+      ) || null,
+    );
+  }
+
+  async getMaxOrder(): Promise<number> {
+    if (this.experiences.length === 0) {
+      return Promise.resolve(0);
+    }
+    return Promise.resolve(
+      Math.max(...this.experiences.map((exp) => exp.order)),
+    );
+  }
 }
