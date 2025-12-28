@@ -894,4 +894,82 @@ describe('Education API (e2e)', () => {
       expect(found.isHighlighted).toBe(true);
     });
   });
+
+  describe('DELETE /api/v1/education/:id', () => {
+    const validApiKey = 'test-api-key';
+    let educationIdToDelete: string;
+
+    beforeEach(async () => {
+      // Create an education to delete
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: `Test Delete University ${Date.now()}`,
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Testing',
+          startDate: '2020-01-01',
+          endDate: '2024-06-01',
+          description: 'An education to be deleted',
+          location: 'Test City',
+        });
+      educationIdToDelete = createRes.body.data.id;
+    });
+
+    it('should delete education successfully with valid API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/education/${educationIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data', null);
+          expect(res.body).toHaveProperty('meta');
+        });
+    });
+
+    it('should reject delete without API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/education/${educationIdToDelete}`)
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject delete with invalid API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/education/${educationIdToDelete}`)
+        .set('x-api-key', 'wrong-key')
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should return 404 for non-existent education', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/education/non-existent-id')
+        .set('x-api-key', validApiKey)
+        .expect(404)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 404);
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should actually remove the education from database', async () => {
+      // Delete the education
+      await request(app.getHttpServer())
+        .delete(`/api/v1/education/${educationIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200);
+
+      // Verify it's gone by trying to delete again
+      return request(app.getHttpServer())
+        .delete(`/api/v1/education/${educationIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(404);
+    });
+  });
 });

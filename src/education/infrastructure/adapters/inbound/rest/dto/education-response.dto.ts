@@ -40,4 +40,7 @@ export class EducationResponseDto {
 
   @ApiProperty({ description: 'Whether education is highlighted' })
   isHighlighted: boolean;
+
+  @ApiProperty({ description: 'Display order' })
+  order: number;
 }

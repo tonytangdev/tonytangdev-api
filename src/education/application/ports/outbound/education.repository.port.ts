@@ -20,4 +20,5 @@ export abstract class EducationRepositoryPort {
     excludeId: string;
   }): Promise<Education | null>;
   abstract update(education: Education): Promise<Education>;
+  abstract delete(id: string): Promise<void>;
 }

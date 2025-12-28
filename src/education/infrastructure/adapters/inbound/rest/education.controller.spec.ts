@@ -5,6 +5,7 @@ import { GetHighlightedEducationUseCase } from '../../../../application/ports/in
 import { GetInProgressEducationUseCase } from '../../../../application/ports/inbound/get-in-progress-education.use-case';
 import { CreateEducationUseCase } from '../../../../application/ports/inbound/create-education.use-case';
 import { UpdateEducationUseCase } from '../../../../application/ports/inbound/update-education.use-case';
+import { DeleteEducationUseCase } from '../../../../application/ports/inbound/delete-education.use-case';
 import { EducationMapper } from '../mappers/education.mapper';
 import { Education } from '../../../../domain/entities/education.entity';
 import { DegreeType } from '../../../../domain/value-objects/degree-type.vo';
@@ -18,6 +19,7 @@ describe('EducationController', () => {
   let getInProgressEducationUseCase: jest.Mocked<GetInProgressEducationUseCase>;
   let createEducationUseCase: jest.Mocked<CreateEducationUseCase>;
   let updateEducationUseCase: jest.Mocked<UpdateEducationUseCase>;
+  let deleteEducationUseCase: jest.Mocked<DeleteEducationUseCase>;
 
   beforeEach(async () => {
     const mockGetEducationUseCase = {
@@ -33,6 +35,9 @@ describe('EducationController', () => {
       execute: jest.fn(),
     };
     const mockUpdateEducationUseCase = {
+      execute: jest.fn(),
+    };
+    const mockDeleteEducationUseCase = {
       execute: jest.fn(),
     };
 
@@ -56,6 +61,10 @@ describe('EducationController', () => {
           provide: UpdateEducationUseCase,
           useValue: mockUpdateEducationUseCase,
         },
+        {
+          provide: DeleteEducationUseCase,
+          useValue: mockDeleteEducationUseCase,
+        },
         EducationMapper,
       ],
     })
@@ -69,6 +78,7 @@ describe('EducationController', () => {
     getInProgressEducationUseCase = module.get(GetInProgressEducationUseCase);
     createEducationUseCase = module.get(CreateEducationUseCase);
     updateEducationUseCase = module.get(UpdateEducationUseCase);
+    deleteEducationUseCase = module.get(DeleteEducationUseCase);
   });
 
   describe('getEducation', () => {
@@ -466,6 +476,31 @@ describe('EducationController', () => {
       expect(result.data).toHaveProperty('achievements');
       expect(result.data).toHaveProperty('isHighlighted');
       expect(result.data).toHaveProperty('order');
+    });
+  });
+
+  describe('deleteEducation', () => {
+    it('should delete education successfully', async () => {
+      deleteEducationUseCase.execute.mockResolvedValue(undefined);
+
+      const result = await controller.deleteEducation('edu-123');
+
+      expect(deleteEducationUseCase.execute).toHaveBeenCalledWith({
+        id: 'edu-123',
+      });
+      expect(result).toEqual({ data: null, meta: {} });
+    });
+
+    it('should throw NotFoundException when education not found', async () => {
+      const notFoundError = new Error('Education not found');
+      deleteEducationUseCase.execute.mockRejectedValue(notFoundError);
+
+      await expect(
+        controller.deleteEducation('non-existent'),
+      ).rejects.toThrow();
+      expect(deleteEducationUseCase.execute).toHaveBeenCalledWith({
+        id: 'non-existent',
+      });
     });
   });
 });

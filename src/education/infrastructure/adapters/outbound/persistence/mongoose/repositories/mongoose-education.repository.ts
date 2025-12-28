@@ -127,6 +127,10 @@ export class MongooseEducationRepository extends EducationRepositoryPort {
     return this.toDomain(doc!);
   }
 
+  async delete(id: string): Promise<void> {
+    await this.model.findByIdAndDelete(id).exec();
+  }
+
   private toDomain(doc: EducationDocument): Education {
     return new Education({
       id: doc._id,

@@ -101,6 +101,10 @@ export class TypeOrmEducationRepository extends EducationRepositoryPort {
     return this.toDomain(saved);
   }
 
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
+
   private toDomain(orm: EducationOrm): Education {
     return new Education({
       id: orm.id,

@@ -13,6 +13,7 @@ import { GetHighlightedEducationUseCase } from './application/ports/inbound/get-
 import { GetInProgressEducationUseCase } from './application/ports/inbound/get-in-progress-education.use-case';
 import { CreateEducationUseCase } from './application/ports/inbound/create-education.use-case';
 import { UpdateEducationUseCase } from './application/ports/inbound/update-education.use-case';
+import { DeleteEducationUseCase } from './application/ports/inbound/delete-education.use-case';
 
 // Application ports (outbound)
 import { EducationRepositoryPort } from './application/ports/outbound/education.repository.port';
@@ -23,6 +24,7 @@ import { GetHighlightedEducationService } from './application/services/get-highl
 import { GetInProgressEducationService } from './application/services/get-in-progress-education.service';
 import { CreateEducationService } from './application/services/create-education.service';
 import { UpdateEducationService } from './application/services/update-education.service';
+import { DeleteEducationService } from './application/services/delete-education.service';
 
 // Infrastructure adapters (outbound) - In-Memory
 import { InMemoryEducationRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-education.repository';
@@ -66,6 +68,10 @@ export class EducationModule {
         {
           provide: UpdateEducationUseCase,
           useClass: UpdateEducationService,
+        },
+        {
+          provide: DeleteEducationUseCase,
+          useClass: DeleteEducationService,
         },
         {
           provide: EducationRepositoryPort,
@@ -134,6 +140,10 @@ export class EducationModule {
         {
           provide: UpdateEducationUseCase,
           useClass: UpdateEducationService,
+        },
+        {
+          provide: DeleteEducationUseCase,
+          useClass: DeleteEducationService,
         },
 
         // Outbound adapters (repositories)

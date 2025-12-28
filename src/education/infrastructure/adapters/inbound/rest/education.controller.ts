@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -21,6 +22,7 @@ import { GetHighlightedEducationUseCase } from '../../../../application/ports/in
 import { GetInProgressEducationUseCase } from '../../../../application/ports/inbound/get-in-progress-education.use-case';
 import { CreateEducationUseCase } from '../../../../application/ports/inbound/create-education.use-case';
 import { UpdateEducationUseCase } from '../../../../application/ports/inbound/update-education.use-case';
+import { DeleteEducationUseCase } from '../../../../application/ports/inbound/delete-education.use-case';
 import { EducationMapper } from '../mappers/education.mapper';
 import { EducationResponseDto } from './dto/education-response.dto';
 import { CreateEducationDto } from './dto/create-education.dto';
@@ -35,6 +37,7 @@ export class EducationController {
     private readonly getInProgressEducationUseCase: GetInProgressEducationUseCase,
     private readonly createEducationUseCase: CreateEducationUseCase,
     private readonly updateEducationUseCase: UpdateEducationUseCase,
+    private readonly deleteEducationUseCase: DeleteEducationUseCase,
     private readonly educationMapper: EducationMapper,
   ) {}
 
@@ -133,5 +136,18 @@ export class EducationController {
     const education = await this.updateEducationUseCase.execute({ id, ...dto });
     const data = this.educationMapper.toDto(education);
     return { data, meta: {} };
+  }
+
+  @Delete(':id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Delete an education record' })
+  @ApiResponse({ status: 200, description: 'Education deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid API key' })
+  @ApiResponse({ status: 404, description: 'Education not found' })
+  @ApiParam({ name: 'id', description: 'Education ID' })
+  @ApiBearerAuth('api-key')
+  async deleteEducation(@Param('id') id: string) {
+    await this.deleteEducationUseCase.execute({ id });
+    return { data: null, meta: {} };
   }
 }

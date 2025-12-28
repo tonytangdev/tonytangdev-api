@@ -86,4 +86,12 @@ export class InMemoryEducationRepository extends EducationRepositoryPort {
     }
     return Promise.resolve(education);
   }
+
+  delete(id: string): Promise<void> {
+    const index = this.educations.findIndex((edu) => edu.id === id);
+    if (index !== -1) {
+      this.educations.splice(index, 1);
+    }
+    return Promise.resolve();
+  }
 }
