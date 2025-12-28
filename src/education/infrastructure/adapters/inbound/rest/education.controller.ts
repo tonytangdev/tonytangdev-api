@@ -1,10 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+} from '@nestjs/swagger';
+import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
 import { GetEducationUseCase } from '../../../../application/ports/inbound/get-education.use-case';
 import { GetHighlightedEducationUseCase } from '../../../../application/ports/inbound/get-highlighted-education.use-case';
 import { GetInProgressEducationUseCase } from '../../../../application/ports/inbound/get-in-progress-education.use-case';
+import { CreateEducationUseCase } from '../../../../application/ports/inbound/create-education.use-case';
 import { EducationMapper } from '../mappers/education.mapper';
 import { EducationResponseDto } from './dto/education-response.dto';
+import { CreateEducationDto } from './dto/create-education.dto';
 
 @ApiTags('education')
 @Controller('education')
@@ -13,6 +22,7 @@ export class EducationController {
     private readonly getEducationUseCase: GetEducationUseCase,
     private readonly getHighlightedEducationUseCase: GetHighlightedEducationUseCase,
     private readonly getInProgressEducationUseCase: GetInProgressEducationUseCase,
+    private readonly createEducationUseCase: CreateEducationUseCase,
     private readonly educationMapper: EducationMapper,
   ) {}
 
@@ -65,5 +75,27 @@ export class EducationController {
       data,
       meta: { total: data.length },
     };
+  }
+
+  @Post()
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Create a new education record' })
+  @ApiResponse({
+    status: 201,
+    description: 'Education record created successfully',
+    type: EducationResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 401, description: 'Invalid API key' })
+  @ApiResponse({
+    status: 409,
+    description: 'Education record already exists',
+  })
+  @ApiBody({ type: CreateEducationDto })
+  @ApiBearerAuth('api-key')
+  async createEducation(@Body() dto: CreateEducationDto) {
+    const education = await this.createEducationUseCase.execute(dto);
+    const data = this.educationMapper.toDto(education);
+    return { data, meta: {} };
   }
 }

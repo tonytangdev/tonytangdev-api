@@ -232,4 +232,360 @@ describe('Education API (e2e)', () => {
         });
     });
   });
+
+  describe('POST /api/v1/education', () => {
+    const validApiKey = 'test-api-key';
+
+    it('should create education with required fields and apply defaults', () => {
+      const educationName = `MIT ${Date.now()}`;
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: educationName,
+          degreeType: 'master',
+          fieldOfStudy: 'Computer Science',
+          startDate: '2020-01-15',
+          endDate: '2022-06-30',
+          description: 'Master of Science in Computer Science',
+          location: 'Cambridge, MA',
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data');
+          expect(res.body).toHaveProperty('meta');
+          expect(res.body.data).toHaveProperty('id');
+          expect(res.body.data.institution).toBe(educationName);
+          expect(res.body.data.degreeType).toBe('master');
+          expect(res.body.data.fieldOfStudy).toBe('Computer Science');
+          expect(res.body.data.status).toBe('completed');
+          expect(res.body.data.isHighlighted).toBe(false);
+          expect(res.body.data.achievements).toEqual([]);
+          expect(res.body.meta).toEqual({});
+        });
+    });
+
+    it('should create education with all fields', () => {
+      const educationName = `Stanford ${Date.now()}`;
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: educationName,
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Electrical Engineering',
+          startDate: '2018-09-01',
+          endDate: '2022-06-15',
+          description: 'Bachelor of Science in Electrical Engineering',
+          location: 'Stanford, CA',
+          status: 'completed',
+          achievements: ['Summa Cum Laude', 'Research Assistant'],
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.institution).toBe(educationName);
+          expect(res.body.data.achievements).toEqual([
+            'Summa Cum Laude',
+            'Research Assistant',
+          ]);
+          expect(res.body.data.status).toBe('completed');
+        });
+    });
+
+    it('should create IN_PROGRESS education with null endDate', () => {
+      const educationName = `Current University ${Date.now()}`;
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: educationName,
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Computer Science',
+          startDate: '2022-01-01',
+          description: 'Currently pursuing',
+          location: 'Campus',
+          status: 'in_progress',
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.status).toBe('in_progress');
+          expect(res.body.data.endDate).toBeNull();
+        });
+    });
+
+    it('should reject request without API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .send({
+          institution: 'Test University',
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Test Field',
+          startDate: '2020-01-01',
+          endDate: '2024-06-01',
+          description: 'Test',
+          location: 'Test Location',
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body).toHaveProperty('message');
+        });
+    });
+
+    it('should reject request with invalid API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', 'invalid-key')
+        .send({
+          institution: 'Test University',
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Test Field',
+          startDate: '2020-01-01',
+          endDate: '2024-06-01',
+          description: 'Test',
+          location: 'Test Location',
+        })
+        .expect(401);
+    });
+
+    it('should reject duplicate education (same institution, degree, field)', async () => {
+      const educationData = {
+        institution: 'Unique University',
+        degreeType: 'master',
+        fieldOfStudy: 'Unique Field',
+        startDate: '2020-01-01',
+        endDate: '2022-06-01',
+        description: 'Unique education',
+        location: 'Test Location',
+      };
+
+      // Create first education
+      await request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send(educationData)
+        .expect(201);
+
+      // Try to create duplicate
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send(educationData)
+        .expect(409)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 409);
+          expect(res.body).toHaveProperty('message');
+          expect(res.body.message).toContain('already exists');
+        });
+    });
+
+    it('should reject missing required fields', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Incomplete University',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+        });
+    });
+
+    it('should reject future startDate', () => {
+      const futureDate = new Date();
+      futureDate.setFullYear(futureDate.getFullYear() + 1);
+
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Future University',
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Time Travel',
+          startDate: futureDate.toISOString().split('T')[0],
+          description: 'Future education',
+          location: 'Future',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+          expect(res.body.message).toContain('future');
+        });
+    });
+
+    it('should reject startDate >= endDate', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Invalid Dates University',
+          degreeType: 'master',
+          fieldOfStudy: 'Mathematics',
+          startDate: '2022-12-31',
+          endDate: '2022-06-01',
+          description: 'Invalid date range',
+          location: 'Test',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+          expect(res.body.message).toContain('before');
+        });
+    });
+
+    it('should reject IN_PROGRESS with endDate', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Ongoing University',
+          degreeType: 'certificate',
+          fieldOfStudy: 'Data Science',
+          startDate: '2023-01-01',
+          endDate: '2024-12-31',
+          description: 'Ongoing certificate',
+          location: 'Online',
+          status: 'in_progress',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+          expect(res.body.message).toContain('null');
+        });
+    });
+
+    it('should reject COMPLETED without endDate', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Incomplete University',
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Biology',
+          startDate: '2018-01-01',
+          description: 'Completed but no end date',
+          location: 'Test',
+          status: 'completed',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+          expect(res.body.message).toContain('end date');
+        });
+    });
+
+    it('should auto-increment order correctly', async () => {
+      // Get current educations to determine max order
+      const getAllRes = await request(app.getHttpServer())
+        .get('/api/v1/education')
+        .expect(200);
+
+      const initialCount = getAllRes.body.data.length;
+
+      // Create a new education
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Order Test University',
+          degreeType: 'diploma',
+          fieldOfStudy: 'Testing',
+          startDate: '2021-01-01',
+          endDate: '2021-12-31',
+          description: 'Testing order auto-increment',
+          location: 'Test',
+        })
+        .expect(201);
+
+      expect(createRes.body.data).toHaveProperty('id');
+
+      // Verify it appears in GET response
+      const getRes = await request(app.getHttpServer())
+        .get('/api/v1/education')
+        .expect(200);
+
+      expect(getRes.body.data.length).toBe(initialCount + 1);
+    });
+
+    it('should include created education in GET response', async () => {
+      const educationData = {
+        institution: `Test Institution ${Date.now()}`,
+        degreeType: 'bootcamp',
+        fieldOfStudy: 'Full Stack Development',
+        startDate: '2023-01-01',
+        endDate: '2023-06-30',
+        description: 'Full stack bootcamp',
+        location: 'Online',
+      };
+
+      // Create education
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send(educationData)
+        .expect(201);
+
+      const createdEducationId = createRes.body.data.id;
+
+      // Verify it appears in GET /api/v1/education
+      const getRes = await request(app.getHttpServer())
+        .get('/api/v1/education')
+        .expect(200);
+
+      const foundEducation = getRes.body.data.find(
+        (edu: any) => edu.id === createdEducationId,
+      );
+      expect(foundEducation).toBeDefined();
+      expect(foundEducation.institution).toBe(educationData.institution);
+      expect(foundEducation.fieldOfStudy).toBe(educationData.fieldOfStudy);
+    });
+
+    it('should format dates as ISO strings in response', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Date Format Test University',
+          degreeType: 'master',
+          fieldOfStudy: 'Software Engineering',
+          startDate: '2020-06-15',
+          endDate: '2022-12-31',
+          description: 'Testing date formatting',
+          location: 'Test',
+        })
+        .expect(201);
+
+      const education = createRes.body.data;
+
+      // Verify startDate is ISO string
+      expect(typeof education.startDate).toBe('string');
+      expect(education.startDate).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+      // Verify endDate is ISO string
+      expect(typeof education.endDate).toBe('string');
+      expect(education.endDate).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+
+    it('should handle education with only required fields and default optional fields', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/education')
+        .set('x-api-key', validApiKey)
+        .send({
+          institution: 'Minimal University',
+          degreeType: 'bachelor',
+          fieldOfStudy: 'Art',
+          startDate: '2019-01-01',
+          endDate: '2023-06-01',
+          description: 'Minimal education',
+          location: 'Test',
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.achievements).toEqual([]);
+          expect(res.body.data.isHighlighted).toBe(false);
+          expect(res.body.data.status).toBe('completed');
+        });
+    });
+  });
 });

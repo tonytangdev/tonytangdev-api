@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EducationRepositoryPort } from '../../../../../application/ports/outbound/education.repository.port';
 import { Education } from '../../../../../domain/entities/education.entity';
 import { EducationStatus } from '../../../../../domain/value-objects/education-status.vo';
+import { DegreeType } from '../../../../../domain/value-objects/degree-type.vo';
 import { seedEducations } from './seed-data';
 
 @Injectable()
@@ -28,5 +29,32 @@ export class InMemoryEducationRepository extends EducationRepositoryPort {
         .filter((edu) => edu.status === EducationStatus.IN_PROGRESS)
         .sort((a, b) => a.order - b.order),
     );
+  }
+
+  async create(education: Education): Promise<Education> {
+    this.educations.push(education);
+    return Promise.resolve(education);
+  }
+
+  async findByCompositeKey(
+    institution: string,
+    degreeType: DegreeType,
+    fieldOfStudy: string,
+  ): Promise<Education | null> {
+    const found = this.educations.find(
+      (edu) =>
+        edu.institution === institution &&
+        edu.degreeType === degreeType &&
+        edu.fieldOfStudy === fieldOfStudy,
+    );
+    return Promise.resolve(found || null);
+  }
+
+  async getMaxOrder(): Promise<number> {
+    if (this.educations.length === 0) {
+      return Promise.resolve(0);
+    }
+    const maxOrder = Math.max(...this.educations.map((edu) => edu.order));
+    return Promise.resolve(maxOrder);
   }
 }

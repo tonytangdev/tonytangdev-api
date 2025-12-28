@@ -11,6 +11,7 @@ import { EducationSortingService } from './domain/services/education-sorting.ser
 import { GetEducationUseCase } from './application/ports/inbound/get-education.use-case';
 import { GetHighlightedEducationUseCase } from './application/ports/inbound/get-highlighted-education.use-case';
 import { GetInProgressEducationUseCase } from './application/ports/inbound/get-in-progress-education.use-case';
+import { CreateEducationUseCase } from './application/ports/inbound/create-education.use-case';
 
 // Application ports (outbound)
 import { EducationRepositoryPort } from './application/ports/outbound/education.repository.port';
@@ -19,6 +20,7 @@ import { EducationRepositoryPort } from './application/ports/outbound/education.
 import { GetEducationService } from './application/services/get-education.service';
 import { GetHighlightedEducationService } from './application/services/get-highlighted-education.service';
 import { GetInProgressEducationService } from './application/services/get-in-progress-education.service';
+import { CreateEducationService } from './application/services/create-education.service';
 
 // Infrastructure adapters (outbound) - In-Memory
 import { InMemoryEducationRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-education.repository';
@@ -54,6 +56,10 @@ export class EducationModule {
         {
           provide: GetInProgressEducationUseCase,
           useClass: GetInProgressEducationService,
+        },
+        {
+          provide: CreateEducationUseCase,
+          useClass: CreateEducationService,
         },
         {
           provide: EducationRepositoryPort,
@@ -114,6 +120,10 @@ export class EducationModule {
         {
           provide: GetInProgressEducationUseCase,
           useClass: GetInProgressEducationService,
+        },
+        {
+          provide: CreateEducationUseCase,
+          useClass: CreateEducationService,
         },
 
         // Outbound adapters (repositories)

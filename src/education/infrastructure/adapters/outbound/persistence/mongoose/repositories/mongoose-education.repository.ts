@@ -40,6 +40,48 @@ export class MongooseEducationRepository extends EducationRepositoryPort {
     return docs.map((doc) => this.toDomain(doc));
   }
 
+  async create(education: Education): Promise<Education> {
+    const doc = await this.model.create({
+      _id: education.id,
+      institution: education.institution,
+      degreeType: education.degreeType,
+      fieldOfStudy: education.fieldOfStudy,
+      startDate: education.startDate,
+      endDate: education.endDate,
+      description: education.description,
+      achievements: education.achievements,
+      location: education.location,
+      status: education.status,
+      isHighlighted: education.isHighlighted,
+      order: education.order,
+    });
+    return this.toDomain(doc);
+  }
+
+  async findByCompositeKey(
+    institution: string,
+    degreeType: DegreeType,
+    fieldOfStudy: string,
+  ): Promise<Education | null> {
+    const doc = await this.model
+      .findOne({
+        institution,
+        degreeType,
+        fieldOfStudy,
+      })
+      .exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async getMaxOrder(): Promise<number> {
+    const doc = await this.model
+      .findOne()
+      .sort({ order: -1 })
+      .select('order')
+      .exec();
+    return doc?.order ?? 0;
+  }
+
   private toDomain(doc: EducationDocument): Education {
     return new Education({
       id: doc._id,
