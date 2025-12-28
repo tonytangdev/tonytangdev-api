@@ -15,6 +15,10 @@ describe('CreateExperienceService', () => {
       findAll: jest.fn(),
       findHighlighted: jest.fn(),
       findCurrent: jest.fn(),
+      findById: jest.fn(),
+      update: jest.fn(),
+      findByCompanyAndTitleExcludingId: jest.fn(),
+      delete: jest.fn(),
     };
 
     service = new CreateExperienceService(mockRepository);

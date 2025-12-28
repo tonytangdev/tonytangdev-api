@@ -37,6 +37,7 @@ describe('UpdateExperienceService', () => {
       findAll: jest.fn(),
       findHighlighted: jest.fn(),
       findCurrent: jest.fn(),
+      delete: jest.fn(),
     };
 
     service = new UpdateExperienceService(mockRepository);
