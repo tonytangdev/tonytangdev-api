@@ -461,6 +461,273 @@ describe('Experiences API (e2e)', () => {
     });
   });
 
+  describe('PUT /api/v1/experiences/:id', () => {
+    let testExperienceId: string;
+
+    beforeEach(async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/experiences')
+        .set('x-api-key', validApiKey)
+        .send({
+          company: `UpdateTest ${Date.now()}`,
+          title: 'Junior Engineer',
+          startDate: '2023-01-01',
+          description: 'Initial description',
+          technologies: ['JavaScript'],
+          location: 'Remote',
+        });
+      testExperienceId = createRes.body.data.id;
+    });
+
+    it('should update experience successfully', async () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/experiences/${testExperienceId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          company: 'UpdateTest Updated',
+          title: 'Senior Engineer',
+          startDate: '2023-01-01',
+          endDate: '2024-12-31',
+          description: 'Updated description',
+          technologies: ['TypeScript', 'React'],
+          achievements: ['Promoted', 'Led project'],
+          location: 'San Francisco, CA',
+          isHighlighted: true,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.id).toBe(testExperienceId);
+          expect(res.body.data.company).toBe('UpdateTest Updated');
+          expect(res.body.data.title).toBe('Senior Engineer');
+          expect(res.body.data.description).toBe('Updated description');
+          expect(res.body.data.technologies).toEqual(['TypeScript', 'React']);
+          expect(res.body.data.achievements).toEqual([
+            'Promoted',
+            'Led project',
+          ]);
+          expect(res.body.data.isHighlighted).toBe(true);
+          expect(res.body.data.isCurrent).toBe(false);
+        });
+    });
+
+    it('should compute isCurrent from endDate', async () => {
+      const withEndDate = await request(app.getHttpServer())
+        .put(`/api/v1/experiences/${testExperienceId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          company: 'Test',
+          title: 'Engineer',
+          startDate: '2023-01-01',
+          endDate: '2024-12-31',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          location: 'SF',
+          isHighlighted: false,
+        })
+        .expect(200);
+
+      expect(withEndDate.body.data.isCurrent).toBe(false);
+
+      const createRes2 = await request(app.getHttpServer())
+        .post('/api/v1/experiences')
+        .set('x-api-key', validApiKey)
+        .send({
+          company: `UpdateTest2 ${Date.now()}`,
+          title: 'Engineer',
+          startDate: '2023-01-01',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          location: 'SF',
+        });
+
+      const withoutEndDate = await request(app.getHttpServer())
+        .put(`/api/v1/experiences/${createRes2.body.data.id}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          company: 'Test2',
+          title: 'Engineer',
+          startDate: '2023-01-01',
+          description: 'Updated',
+          technologies: ['TypeScript'],
+          location: 'SF',
+          isHighlighted: false,
+        })
+        .expect(200);
+
+      expect(withoutEndDate.body.data.isCurrent).toBe(true);
+    });
+
+    it('should return 404 for non-existent experience', () => {
+      return request(app.getHttpServer())
+        .put('/api/v1/experiences/non-existent-id')
+        .set('x-api-key', validApiKey)
+        .send({
+          company: 'Test',
+          title: 'Engineer',
+          startDate: '2023-01-01',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          location: 'SF',
+          isHighlighted: false,
+        })
+        .expect(404)
+        .expect((res) => {
+          expect(res.body.statusCode).toBe(404);
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should return 409 for duplicate company and title', async () => {
+      const uniqueName = `DuplicateUpdate ${Date.now()}`;
+
+      await request(app.getHttpServer())
+        .post('/api/v1/experiences')
+        .set('x-api-key', validApiKey)
+        .send({
+          company: uniqueName,
+          title: 'Staff Engineer',
+          startDate: '2023-01-01',
+          description: 'Existing experience',
+          technologies: ['Go'],
+          location: 'NYC',
+        });
+
+      return request(app.getHttpServer())
+        .put(`/api/v1/experiences/${testExperienceId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          company: uniqueName,
+          title: 'Staff Engineer',
+          startDate: '2023-01-01',
+          description: 'Trying to update',
+          technologies: ['TypeScript'],
+          location: 'SF',
+          isHighlighted: false,
+        })
+        .expect(409)
+        .expect((res) => {
+          expect(res.body.statusCode).toBe(409);
+          expect(res.body.message).toContain('already exists');
+        });
+    });
+
+    it('should allow updating with same company and title (own record)', async () => {
+      const getRes = await request(app.getHttpServer())
+        .get('/api/v1/experiences')
+        .expect(200);
+
+      const experience = getRes.body.data.find(
+        (exp: any) => exp.id === testExperienceId,
+      );
+
+      return request(app.getHttpServer())
+        .put(`/api/v1/experiences/${testExperienceId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          company: experience.company,
+          title: experience.title,
+          startDate: '2023-01-01',
+          description: 'Updated description only',
+          technologies: ['TypeScript'],
+          location: 'SF',
+          isHighlighted: false,
+        })
+        .expect(200);
+    });
+
+    it('should reject request without API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/experiences/${testExperienceId}`)
+        .send({
+          company: 'Test',
+          title: 'Engineer',
+          startDate: '2023-01-01',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          location: 'SF',
+          isHighlighted: false,
+        })
+        .expect(401);
+    });
+
+    it('should reject future start date', async () => {
+      const futureDate = new Date();
+      futureDate.setFullYear(futureDate.getFullYear() + 1);
+
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/experiences')
+        .set('x-api-key', validApiKey)
+        .send({
+          company: `FutureDateTest ${Date.now()}`,
+          title: 'Engineer',
+          startDate: '2023-01-01',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          location: 'SF',
+        });
+
+      return request(app.getHttpServer())
+        .put(`/api/v1/experiences/${createRes.body.data.id}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          company: `FutureDateUpdated ${Date.now()}`,
+          title: 'Engineer',
+          startDate: futureDate.toISOString().split('T')[0],
+          description: 'Future job',
+          technologies: ['TypeScript'],
+          location: 'SF',
+          isHighlighted: false,
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body.message).toContain('future');
+        });
+    });
+
+    it('should reject start date after end date', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/experiences')
+        .set('x-api-key', validApiKey)
+        .send({
+          company: `InvalidDateTest ${Date.now()}`,
+          title: 'Engineer',
+          startDate: '2023-01-01',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          location: 'SF',
+        });
+
+      return request(app.getHttpServer())
+        .put(`/api/v1/experiences/${createRes.body.data.id}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          company: `InvalidDateUpdated ${Date.now()}`,
+          title: 'Engineer',
+          startDate: '2024-06-30',
+          endDate: '2024-01-15',
+          description: 'Invalid dates',
+          technologies: ['TypeScript'],
+          location: 'SF',
+          isHighlighted: false,
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body.message).toContain('before');
+        });
+    });
+
+    it('should reject missing required fields', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/experiences/${testExperienceId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          company: 'Test',
+          title: 'Engineer',
+        })
+        .expect(400);
+    });
+  });
+
   describe('CORS', () => {
     it('should have CORS enabled', () => {
       return request(app.getHttpServer())

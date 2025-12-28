@@ -2,7 +2,9 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
+  Param,
   UseGuards,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,9 +21,11 @@ import { GetExperiencesUseCase } from '../../../../application/ports/inbound/get
 import { GetHighlightedExperiencesUseCase } from '../../../../application/ports/inbound/get-highlighted-experiences.use-case';
 import { GetCurrentExperienceUseCase } from '../../../../application/ports/inbound/get-current-experience.use-case';
 import { CreateExperienceUseCase } from '../../../../application/ports/inbound/create-experience.use-case';
+import { UpdateExperienceUseCase } from '../../../../application/ports/inbound/update-experience.use-case';
 import { ExperienceMapper } from '../mappers/experience.mapper';
 import { ExperienceResponseDto } from './dto/experience-response.dto';
 import { CreateExperienceDto } from './dto/create-experience.dto';
+import { UpdateExperienceDto } from './dto/update-experience.dto';
 import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
 
 @ApiTags('experiences')
@@ -32,6 +36,7 @@ export class ExperiencesController {
     private readonly getHighlightedExperiencesUseCase: GetHighlightedExperiencesUseCase,
     private readonly getCurrentExperienceUseCase: GetCurrentExperienceUseCase,
     private readonly createExperienceUseCase: CreateExperienceUseCase,
+    private readonly updateExperienceUseCase: UpdateExperienceUseCase,
     private readonly experienceMapper: ExperienceMapper,
   ) {}
 
@@ -105,6 +110,34 @@ export class ExperiencesController {
   @ApiConflictResponse({ description: 'Experience already exists' })
   async createExperience(@Body() dto: CreateExperienceDto) {
     const experience = await this.createExperienceUseCase.execute(dto);
+    const data = this.experienceMapper.toDto(experience);
+
+    return {
+      data,
+      meta: {},
+    };
+  }
+
+  @Put(':id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Update an existing work experience' })
+  @ApiResponse({
+    status: 200,
+    description: 'Experience updated successfully',
+    type: ExperienceResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing API key' })
+  @ApiNotFoundResponse({ description: 'Experience not found' })
+  @ApiConflictResponse({ description: 'Experience already exists' })
+  async updateExperience(
+    @Param('id') id: string,
+    @Body() dto: UpdateExperienceDto,
+  ) {
+    const experience = await this.updateExperienceUseCase.execute({
+      id,
+      ...dto,
+    });
     const data = this.experienceMapper.toDto(experience);
 
     return {

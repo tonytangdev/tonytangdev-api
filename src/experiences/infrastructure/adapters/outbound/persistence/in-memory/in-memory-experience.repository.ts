@@ -27,8 +27,22 @@ export class InMemoryExperienceRepository extends ExperienceRepositoryPort {
     );
   }
 
+  async findById(id: string): Promise<Experience | null> {
+    return Promise.resolve(
+      this.experiences.find((exp) => exp.id === id) || null,
+    );
+  }
+
   async create(experience: Experience): Promise<Experience> {
     this.experiences.push(experience);
+    return Promise.resolve(experience);
+  }
+
+  async update(experience: Experience): Promise<Experience> {
+    const index = this.experiences.findIndex((exp) => exp.id === experience.id);
+    if (index !== -1) {
+      this.experiences[index] = experience;
+    }
     return Promise.resolve(experience);
   }
 
@@ -39,6 +53,21 @@ export class InMemoryExperienceRepository extends ExperienceRepositoryPort {
     return Promise.resolve(
       this.experiences.find(
         (exp) => exp.company === company && exp.title === title,
+      ) || null,
+    );
+  }
+
+  async findByCompanyAndTitleExcludingId(
+    company: string,
+    title: string,
+    excludeId: string,
+  ): Promise<Experience | null> {
+    return Promise.resolve(
+      this.experiences.find(
+        (exp) =>
+          exp.company === company &&
+          exp.title === title &&
+          exp.id !== excludeId,
       ) || null,
     );
   }

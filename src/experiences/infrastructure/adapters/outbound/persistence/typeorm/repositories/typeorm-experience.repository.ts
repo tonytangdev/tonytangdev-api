@@ -36,7 +36,18 @@ export class TypeOrmExperienceRepository extends ExperienceRepositoryPort {
     return experience ? this.toDomain(experience) : null;
   }
 
+  async findById(id: string): Promise<Experience | null> {
+    const experience = await this.repository.findOne({ where: { id } });
+    return experience ? this.toDomain(experience) : null;
+  }
+
   async create(experience: Experience): Promise<Experience> {
+    const orm = this.toOrm(experience);
+    const saved = await this.repository.save(orm);
+    return this.toDomain(saved);
+  }
+
+  async update(experience: Experience): Promise<Experience> {
     const orm = this.toOrm(experience);
     const saved = await this.repository.save(orm);
     return this.toDomain(saved);
@@ -49,6 +60,20 @@ export class TypeOrmExperienceRepository extends ExperienceRepositoryPort {
     const experience = await this.repository.findOne({
       where: { company, title },
     });
+    return experience ? this.toDomain(experience) : null;
+  }
+
+  async findByCompanyAndTitleExcludingId(
+    company: string,
+    title: string,
+    excludeId: string,
+  ): Promise<Experience | null> {
+    const experience = await this.repository
+      .createQueryBuilder('experience')
+      .where('experience.company = :company', { company })
+      .andWhere('experience.title = :title', { title })
+      .andWhere('experience.id != :excludeId', { excludeId })
+      .getOne();
     return experience ? this.toDomain(experience) : null;
   }
 

@@ -35,6 +35,11 @@ export class MongooseExperienceRepository extends ExperienceRepositoryPort {
     return doc ? this.toDomain(doc) : null;
   }
 
+  async findById(id: string): Promise<Experience | null> {
+    const doc = await this.model.findById(id).exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
   async create(experience: Experience): Promise<Experience> {
     const doc = new this.model({
       _id: experience.id,
@@ -54,11 +59,45 @@ export class MongooseExperienceRepository extends ExperienceRepositoryPort {
     return this.toDomain(saved);
   }
 
+  async update(experience: Experience): Promise<Experience> {
+    const doc = await this.model
+      .findByIdAndUpdate(
+        experience.id,
+        {
+          company: experience.company,
+          title: experience.title,
+          startDate: experience.startDate,
+          endDate: experience.endDate,
+          description: experience.description,
+          technologies: experience.technologies,
+          achievements: experience.achievements,
+          location: experience.location,
+          isCurrent: experience.isCurrent,
+          isHighlighted: experience.isHighlighted,
+          order: experience.order,
+        },
+        { new: true },
+      )
+      .exec();
+    return this.toDomain(doc);
+  }
+
   async findByCompanyAndTitle(
     company: string,
     title: string,
   ): Promise<Experience | null> {
     const doc = await this.model.findOne({ company, title }).exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async findByCompanyAndTitleExcludingId(
+    company: string,
+    title: string,
+    excludeId: string,
+  ): Promise<Experience | null> {
+    const doc = await this.model
+      .findOne({ company, title, _id: { $ne: excludeId } })
+      .exec();
     return doc ? this.toDomain(doc) : null;
   }
 

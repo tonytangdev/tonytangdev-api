@@ -5,6 +5,7 @@ import { GetExperiencesUseCase } from '../../../../application/ports/inbound/get
 import { GetHighlightedExperiencesUseCase } from '../../../../application/ports/inbound/get-highlighted-experiences.use-case';
 import { GetCurrentExperienceUseCase } from '../../../../application/ports/inbound/get-current-experience.use-case';
 import { CreateExperienceUseCase } from '../../../../application/ports/inbound/create-experience.use-case';
+import { UpdateExperienceUseCase } from '../../../../application/ports/inbound/update-experience.use-case';
 import { ExperienceMapper } from '../mappers/experience.mapper';
 import { Experience } from '../../../../domain/entities/experience.entity';
 import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
@@ -15,6 +16,7 @@ describe('ExperiencesController', () => {
   let getHighlightedExperiencesUseCase: jest.Mocked<GetHighlightedExperiencesUseCase>;
   let getCurrentExperienceUseCase: jest.Mocked<GetCurrentExperienceUseCase>;
   let createExperienceUseCase: jest.Mocked<CreateExperienceUseCase>;
+  let updateExperienceUseCase: jest.Mocked<UpdateExperienceUseCase>;
 
   beforeEach(async () => {
     const mockGetExperiencesUseCase = {
@@ -30,6 +32,10 @@ describe('ExperiencesController', () => {
     };
 
     const mockCreateExperienceUseCase = {
+      execute: jest.fn(),
+    };
+
+    const mockUpdateExperienceUseCase = {
       execute: jest.fn(),
     };
 
@@ -49,6 +55,10 @@ describe('ExperiencesController', () => {
           provide: CreateExperienceUseCase,
           useValue: mockCreateExperienceUseCase,
         },
+        {
+          provide: UpdateExperienceUseCase,
+          useValue: mockUpdateExperienceUseCase,
+        },
         ExperienceMapper,
       ],
     })
@@ -63,6 +73,7 @@ describe('ExperiencesController', () => {
     );
     getCurrentExperienceUseCase = module.get(GetCurrentExperienceUseCase);
     createExperienceUseCase = module.get(CreateExperienceUseCase);
+    updateExperienceUseCase = module.get(UpdateExperienceUseCase);
   });
 
   it('should be defined', () => {
@@ -265,6 +276,50 @@ describe('ExperiencesController', () => {
 
       expect(result.data.achievements).toHaveLength(2);
       expect(result.data.isCurrent).toBe(false);
+    });
+  });
+
+  describe('updateExperience', () => {
+    it('should update experience successfully', async () => {
+      const dto = {
+        company: 'Anthropic',
+        title: 'Staff Software Engineer',
+        startDate: '2023-01-15',
+        endDate: '2024-12-31',
+        description: 'Leading AI projects',
+        technologies: ['TypeScript', 'React', 'Node.js'],
+        achievements: ['Promoted to Staff', 'Built new feature'],
+        location: 'San Francisco, CA',
+        isHighlighted: true,
+      };
+
+      const experience = new Experience({
+        id: 'existing-id',
+        company: 'Anthropic',
+        title: 'Staff Software Engineer',
+        startDate: new Date('2023-01-15'),
+        endDate: new Date('2024-12-31'),
+        description: 'Leading AI projects',
+        technologies: ['TypeScript', 'React', 'Node.js'],
+        achievements: ['Promoted to Staff', 'Built new feature'],
+        location: 'San Francisco, CA',
+        isCurrent: false,
+        isHighlighted: true,
+        order: 1,
+      });
+
+      updateExperienceUseCase.execute.mockResolvedValue(experience);
+
+      const result = await controller.updateExperience('existing-id', dto);
+
+      expect(updateExperienceUseCase.execute).toHaveBeenCalledWith({
+        id: 'existing-id',
+        ...dto,
+      });
+      expect(result.data.title).toBe('Staff Software Engineer');
+      expect(result.data.isHighlighted).toBe(true);
+      expect(result.data.isCurrent).toBe(false);
+      expect(result.meta).toEqual({});
     });
   });
 });
