@@ -52,6 +52,48 @@ export class TypeOrmProfileRepository extends ProfileRepositoryPort {
     return this.toDomain(saved);
   }
 
+  async update(profile: Profile): Promise<Profile> {
+    const existing = await this.repository.findOne({
+      where: { id: profile.id },
+      relations: ['socialLinks'],
+    });
+
+    if (!existing) {
+      throw new Error('Profile not found');
+    }
+
+    // Update profile fields
+    existing.fullName = profile.fullName;
+    existing.title = profile.title;
+    existing.bio = profile.bio;
+    existing.email = profile.email;
+    existing.phone = profile.phone;
+    existing.location = profile.location;
+    existing.timezone = profile.timezone;
+    existing.availability = profile.availability;
+    existing.yearsOfExperience = profile.yearsOfExperience;
+    existing.profilePictureUrl = profile.profilePictureUrl;
+    existing.resumeUrl = profile.resumeUrl;
+
+    // Remove old social links
+    if (existing.socialLinks && existing.socialLinks.length > 0) {
+      await this.repository.manager.remove(existing.socialLinks);
+    }
+
+    // Create new social links
+    existing.socialLinks = profile.socialLinks.map((link) => {
+      const linkOrm = new SocialLinkOrm();
+      linkOrm.platform = link.platform;
+      linkOrm.url = link.url;
+      linkOrm.username = link.username;
+      linkOrm.profileId = profile.id;
+      return linkOrm;
+    });
+
+    const saved = await this.repository.save(existing);
+    return this.toDomain(saved);
+  }
+
   private toDomain(orm: ProfileOrm): Profile {
     return new Profile({
       id: orm.id,

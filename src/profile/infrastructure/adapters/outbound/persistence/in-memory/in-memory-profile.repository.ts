@@ -15,4 +15,12 @@ export class InMemoryProfileRepository extends ProfileRepositoryPort {
     this.profile = profile;
     return Promise.resolve(profile);
   }
+
+  async update(profile: Profile): Promise<Profile> {
+    if (!this.profile) {
+      throw new Error('Profile not found');
+    }
+    this.profile = profile;
+    return Promise.resolve(profile);
+  }
 }

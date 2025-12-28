@@ -351,6 +351,159 @@ describe('Profile API (e2e)', () => {
     });
   });
 
+  describe('PATCH /api/v1/profile', () => {
+    const validApiKey = 'test-api-key';
+
+    it('should update single field', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({ fullName: 'Updated Name' })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.fullName).toBe('Updated Name');
+        });
+    });
+
+    it('should update multiple fields', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          fullName: 'New Name',
+          title: 'New Title',
+          yearsOfExperience: 10,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.fullName).toBe('New Name');
+          expect(res.body.data.title).toBe('New Title');
+          expect(res.body.data.yearsOfExperience).toBe(10);
+        });
+    });
+
+    it('should update availability status', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({ availability: 'open_to_offers' })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.availability).toBe('open_to_offers');
+        });
+    });
+
+    it('should update social links (replace array)', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({
+          socialLinks: [
+            {
+              platform: 'twitter',
+              url: 'https://twitter.com/newuser',
+              username: 'newuser',
+            },
+          ],
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.socialLinks).toHaveLength(1);
+          expect(res.body.data.socialLinks[0].platform).toBe('twitter');
+        });
+    });
+
+    it('should update nullable field to null', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({ phone: null })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.phone).toBeNull();
+        });
+    });
+
+    it('should reject request without API key', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .send({ fullName: 'Test' })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject invalid email', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({ email: 'invalid-email' })
+        .expect(400);
+    });
+
+    it('should reject invalid timezone', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({ timezone: 'Invalid/Timezone' })
+        .expect(400);
+    });
+
+    it('should reject invalid availability', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({ availability: 'invalid-status' })
+        .expect(400);
+    });
+
+    it('should reject yearsOfExperience below 0', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({ yearsOfExperience: -1 })
+        .expect(400);
+    });
+
+    it('should reject yearsOfExperience above 100', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({ yearsOfExperience: 101 })
+        .expect(400);
+    });
+
+    it('should reject invalid URL fields', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({ profilePictureUrl: 'not-a-url' })
+        .expect(400);
+    });
+
+    it('should handle empty body (no updates)', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({})
+        .expect(200);
+    });
+
+    it('should return proper response format', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/profile')
+        .set('x-api-key', validApiKey)
+        .send({ fullName: 'Test' })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data');
+          expect(res.body).toHaveProperty('meta');
+          expect(res.body.meta).toEqual({});
+        });
+    });
+  });
+
   describe('Response format consistency', () => {
     it('should return data and meta', () => {
       return request(app.getHttpServer())

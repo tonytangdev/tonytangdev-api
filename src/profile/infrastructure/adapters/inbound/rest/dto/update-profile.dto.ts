@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -17,8 +17,8 @@ import { AvailabilityStatus } from '../../../../../domain/value-objects/availabi
 import { SocialPlatform } from '../../../../../domain/value-objects/social-platform.vo';
 import { IsIANATimezone } from './validators/is-iana-timezone.validator';
 
-export class CreateSocialLinkDto {
-  @ApiProperty({
+export class UpdateSocialLinkDto {
+  @ApiPropertyOptional({
     description: 'Social platform',
     enum: SocialPlatform,
     example: SocialPlatform.GITHUB,
@@ -26,14 +26,14 @@ export class CreateSocialLinkDto {
   @IsEnum(SocialPlatform)
   platform: SocialPlatform;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Profile URL',
     example: 'https://github.com/tonytangdev',
   })
   @IsUrl()
   url: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Username',
     example: 'tonytangdev',
   })
@@ -42,38 +42,42 @@ export class CreateSocialLinkDto {
   username: string;
 }
 
-export class CreateProfileDto {
-  @ApiProperty({
+export class UpdateProfileDto {
+  @ApiPropertyOptional({
     description: 'Full name',
     example: 'Tony Tang',
   })
   @IsString()
   @IsNotEmpty()
-  fullName: string;
+  @IsOptional()
+  fullName?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Professional title',
     example: 'Senior Software Engineer',
   })
   @IsString()
   @IsNotEmpty()
-  title: string;
+  @IsOptional()
+  title?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Biography',
     example:
       'Passionate full-stack developer with expertise in modern web technologies.',
   })
   @IsString()
   @IsNotEmpty()
-  bio: string;
+  @IsOptional()
+  bio?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Email address',
     example: 'tony@example.com',
   })
   @IsEmail()
-  email: string;
+  @IsOptional()
+  email?: string;
 
   @ApiPropertyOptional({
     description: 'Phone number',
@@ -84,39 +88,43 @@ export class CreateProfileDto {
   @IsOptional()
   phone?: string | null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Location',
     example: 'San Francisco, CA',
   })
   @IsString()
   @IsNotEmpty()
-  location: string;
+  @IsOptional()
+  location?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Timezone (IANA format)',
     example: 'America/Los_Angeles',
   })
   @IsString()
   @IsNotEmpty()
   @IsIANATimezone()
-  timezone: string;
+  @IsOptional()
+  timezone?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Availability status',
     enum: AvailabilityStatus,
     example: AvailabilityStatus.OPEN_TO_OFFERS,
   })
   @IsEnum(AvailabilityStatus)
-  availability: AvailabilityStatus;
+  @IsOptional()
+  availability?: AvailabilityStatus;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Years of experience',
     example: 8,
   })
   @IsNumber()
   @Min(0)
   @Max(100)
-  yearsOfExperience: number;
+  @IsOptional()
+  yearsOfExperience?: number;
 
   @ApiPropertyOptional({
     description: 'Profile picture URL',
@@ -138,11 +146,11 @@ export class CreateProfileDto {
 
   @ApiPropertyOptional({
     description: 'Social media links',
-    type: [CreateSocialLinkDto],
+    type: [UpdateSocialLinkDto],
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateSocialLinkDto)
+  @Type(() => UpdateSocialLinkDto)
   @IsOptional()
-  socialLinks?: CreateSocialLinkDto[];
+  socialLinks?: UpdateSocialLinkDto[];
 }
