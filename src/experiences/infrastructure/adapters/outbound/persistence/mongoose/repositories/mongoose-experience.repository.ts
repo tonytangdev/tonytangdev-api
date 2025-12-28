@@ -79,6 +79,9 @@ export class MongooseExperienceRepository extends ExperienceRepositoryPort {
         { new: true },
       )
       .exec();
+    if (!doc) {
+      throw new Error(`Experience with id ${experience.id} not found`);
+    }
     return this.toDomain(doc);
   }
 
