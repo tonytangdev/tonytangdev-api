@@ -775,6 +775,231 @@ describe('Refactorings API (e2e)', () => {
     });
   });
 
+  describe('PATCH /api/v1/refactorings/:id', () => {
+    const validApiKey = 'test-api-key';
+    let showcaseId: string;
+
+    beforeEach(async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Original Title',
+          description: 'Original description',
+          technologies: ['JavaScript'],
+          difficulty: 'beginner',
+          tags: ['original-tag'],
+          steps: [
+            {
+              title: 'Original Step 1',
+              description: 'Step 1 description',
+              explanation: 'Step 1 explanation',
+              files: [
+                {
+                  filename: 'original.js',
+                  language: 'javascript',
+                  content: 'console.log("original");',
+                },
+              ],
+            },
+            {
+              title: 'Original Step 2',
+              description: 'Step 2 description',
+              explanation: 'Step 2 explanation',
+              files: [],
+            },
+          ],
+        })
+        .expect(201);
+
+      showcaseId = createRes.body.data.id;
+    });
+
+    it('should patch only title', () => {
+      return request(app.getHttpServer())
+        .patch(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Patched Title',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.title).toBe('Patched Title');
+          expect(res.body.data.description).toBe('Original description');
+          expect(res.body.data.technologies).toEqual(['JavaScript']);
+          expect(res.body.data.difficulty).toBe('beginner');
+          expect(res.body.data.tags).toEqual(['original-tag']);
+          expect(res.body.data.steps).toHaveLength(2);
+        });
+    });
+
+    it('should patch only isHighlighted', () => {
+      return request(app.getHttpServer())
+        .patch(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          isHighlighted: true,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.isHighlighted).toBe(true);
+          expect(res.body.data.title).toBe('Original Title');
+        });
+    });
+
+    it('should patch with existing step ID and preserve other steps', async () => {
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/v1/refactorings/${showcaseId}`)
+        .expect(200);
+
+      const step1Id = getRes.body.data.steps[0].id;
+
+      return request(app.getHttpServer())
+        .patch(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          steps: [
+            {
+              id: step1Id,
+              title: 'Updated Step 1',
+            },
+          ],
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.steps).toHaveLength(2);
+          const updatedStep = res.body.data.steps.find((s) => s.id === step1Id);
+          expect(updatedStep.title).toBe('Updated Step 1');
+          expect(updatedStep.description).toBe('Step 1 description');
+
+          const step2 = res.body.data.steps.find((s) => s.id !== step1Id);
+          expect(step2).toBeDefined();
+          expect(step2.title).toBe('Original Step 2');
+        });
+    });
+
+    it('should create new step when no id provided', () => {
+      return request(app.getHttpServer())
+        .patch(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          steps: [
+            {
+              title: 'New Step 3',
+              description: 'New description',
+              explanation: 'New explanation',
+              files: [],
+            },
+          ],
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.steps).toHaveLength(3);
+          const newStep = res.body.data.steps.find(
+            (s) => s.title === 'New Step 3',
+          );
+          expect(newStep).toBeDefined();
+          expect(newStep.id).toBeDefined();
+        });
+    });
+
+    it('should clear all steps when steps is empty array', () => {
+      return request(app.getHttpServer())
+        .patch(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          steps: [],
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.steps).toHaveLength(0);
+        });
+    });
+
+    it('should preserve all steps when steps is undefined', () => {
+      return request(app.getHttpServer())
+        .patch(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Updated Title',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.steps).toHaveLength(2);
+          expect(res.body.data.title).toBe('Updated Title');
+        });
+    });
+
+    it('should return 404 for non-existent showcase', () => {
+      return request(app.getHttpServer())
+        .patch('/api/v1/refactorings/non-existent-id')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Test',
+        })
+        .expect(404);
+    });
+
+    it('should return 401 without API key', () => {
+      return request(app.getHttpServer())
+        .patch(`/api/v1/refactorings/${showcaseId}`)
+        .send({
+          title: 'Test',
+        })
+        .expect(401);
+    });
+
+    it('should return 401 with invalid API key', () => {
+      return request(app.getHttpServer())
+        .patch(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', 'invalid-key')
+        .send({
+          title: 'Test',
+        })
+        .expect(401);
+    });
+
+    it('should verify patched data via GET', async () => {
+      await request(app.getHttpServer())
+        .patch(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Verified Patch',
+          difficulty: 'advanced',
+        })
+        .expect(200);
+
+      return request(app.getHttpServer())
+        .get(`/api/v1/refactorings/${showcaseId}`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.title).toBe('Verified Patch');
+          expect(res.body.data.difficulty).toBe('advanced');
+          expect(res.body.data.description).toBe('Original description');
+        });
+    });
+
+    it('should patch multiple fields', () => {
+      return request(app.getHttpServer())
+        .patch(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'New Title',
+          difficulty: 'advanced',
+          tags: ['new-tag', 'another-tag'],
+          isHighlighted: true,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.title).toBe('New Title');
+          expect(res.body.data.difficulty).toBe('advanced');
+          expect(res.body.data.tags).toEqual(['new-tag', 'another-tag']);
+          expect(res.body.data.isHighlighted).toBe(true);
+          expect(res.body.data.description).toBe('Original description');
+        });
+    });
+  });
+
   describe('CORS', () => {
     it('should have CORS enabled', () => {
       return request(app.getHttpServer())

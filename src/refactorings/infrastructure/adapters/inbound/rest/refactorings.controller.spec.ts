@@ -5,6 +5,7 @@ import { GetRefactoringShowcaseByIdUseCase } from '../../../../application/ports
 import { GetHighlightedRefactoringShowcasesUseCase } from '../../../../application/ports/inbound/get-highlighted-refactoring-showcases.use-case';
 import { CreateRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/create-refactoring-showcase.use-case';
 import { UpdateRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/update-refactoring-showcase.use-case';
+import { PatchRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/patch-refactoring-showcase.use-case';
 import { RefactoringShowcaseMapper } from '../mappers/refactoring-showcase.mapper';
 import { RefactoringShowcase } from '../../../../domain/entities/refactoring-showcase.entity';
 import { DifficultyLevel } from '../../../../domain/value-objects/difficulty-level.vo';
@@ -14,6 +15,7 @@ describe('RefactoringsController', () => {
   let controller: RefactoringsController;
   let createRefactoringShowcaseUseCase: jest.Mocked<CreateRefactoringShowcaseUseCase>;
   let updateRefactoringShowcaseUseCase: jest.Mocked<UpdateRefactoringShowcaseUseCase>;
+  let patchRefactoringShowcaseUseCase: jest.Mocked<PatchRefactoringShowcaseUseCase>;
 
   beforeEach(async () => {
     const mockGetRefactoringShowcasesUseCase = {
@@ -33,6 +35,10 @@ describe('RefactoringsController', () => {
     };
 
     const mockUpdateRefactoringShowcaseUseCase = {
+      execute: jest.fn(),
+    };
+
+    const mockPatchRefactoringShowcaseUseCase = {
       execute: jest.fn(),
     };
 
@@ -59,6 +65,10 @@ describe('RefactoringsController', () => {
           provide: UpdateRefactoringShowcaseUseCase,
           useValue: mockUpdateRefactoringShowcaseUseCase,
         },
+        {
+          provide: PatchRefactoringShowcaseUseCase,
+          useValue: mockPatchRefactoringShowcaseUseCase,
+        },
         RefactoringShowcaseMapper,
       ],
     })
@@ -72,6 +82,9 @@ describe('RefactoringsController', () => {
     );
     updateRefactoringShowcaseUseCase = module.get(
       UpdateRefactoringShowcaseUseCase,
+    );
+    patchRefactoringShowcaseUseCase = module.get(
+      PatchRefactoringShowcaseUseCase,
     );
   });
 
@@ -235,6 +248,68 @@ describe('RefactoringsController', () => {
       updateRefactoringShowcaseUseCase.execute.mockResolvedValue(showcase);
 
       const result = await controller.updateRefactoringShowcase(id, dto);
+
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('meta');
+      expect(result.meta).toEqual({});
+    });
+  });
+
+  describe('patchRefactoringShowcase', () => {
+    it('should patch showcase and return mapped response', async () => {
+      const id = 'showcase-123';
+      const dto = {
+        title: 'Patched Title',
+        isHighlighted: true,
+      };
+
+      const showcase = new RefactoringShowcase({
+        id,
+        title: 'Patched Title',
+        description: 'Original description',
+        technologies: ['TypeScript'],
+        difficulty: DifficultyLevel.BEGINNER,
+        tags: ['clean-code'],
+        order: 3,
+        isHighlighted: true,
+        steps: [],
+      });
+
+      patchRefactoringShowcaseUseCase.execute.mockResolvedValue(showcase);
+
+      const result = await controller.patchRefactoringShowcase(id, dto);
+
+      expect(patchRefactoringShowcaseUseCase.execute).toHaveBeenCalledWith({
+        id,
+        ...dto,
+      });
+      expect(result.data.title).toBe('Patched Title');
+      expect(result.data.isHighlighted).toBe(true);
+      expect(result.data.id).toBe(id);
+      expect(result.meta).toEqual({});
+    });
+
+    it('should return proper response structure', async () => {
+      const id = 'test-id';
+      const dto = {
+        description: 'Patched description',
+      };
+
+      const showcase = new RefactoringShowcase({
+        id,
+        title: 'Original Title',
+        description: 'Patched description',
+        technologies: ['TypeScript'],
+        difficulty: DifficultyLevel.BEGINNER,
+        tags: [],
+        order: 1,
+        isHighlighted: false,
+        steps: [],
+      });
+
+      patchRefactoringShowcaseUseCase.execute.mockResolvedValue(showcase);
+
+      const result = await controller.patchRefactoringShowcase(id, dto);
 
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('meta');
