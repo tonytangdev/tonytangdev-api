@@ -465,7 +465,7 @@ describe('Projects API (e2e)', () => {
         .expect(200);
 
       const maxOrder = Math.max(
-        ...getAllRes.body.data.map((p: any) => p.order || 0),
+        ...getAllRes.body.data.map((p: any) => (p.order as number) || 0),
       );
 
       // Create a new project
@@ -557,6 +557,337 @@ describe('Projects API (e2e)', () => {
           expect(res.body.data.websiteLink).toBeNull();
           expect(res.body.data.achievements).toEqual([]);
           expect(res.body.data.isHighlighted).toBe(false);
+        });
+    });
+  });
+
+  describe('PUT /api/v1/projects/:id', () => {
+    const validApiKey = 'test-api-key';
+    let projectId: string;
+
+    beforeEach(async () => {
+      // Create a project to update
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: `Test Update Project ${Date.now()}`,
+          description: 'A project to be updated',
+          startDate: '2024-01-01',
+          technologies: ['TypeScript'],
+        });
+      projectId = createRes.body.data.id;
+    });
+
+    it('should update project with valid data', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Updated Project Name',
+          description: 'Updated description',
+          startDate: '2024-02-01',
+          endDate: '2024-06-30',
+          technologies: ['TypeScript', 'React'],
+          repositoryLink: 'https://github.com/user/updated',
+          demoLink: 'https://demo.updated.com',
+          websiteLink: 'https://updated.com',
+          achievements: ['Achievement 1', 'Achievement 2'],
+          isHighlighted: true,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data');
+          expect(res.body).toHaveProperty('meta');
+          expect(res.body.data.id).toBe(projectId);
+          expect(res.body.data.name).toBe('Updated Project Name');
+          expect(res.body.data.description).toBe('Updated description');
+          expect(res.body.data.isHighlighted).toBe(true);
+          expect(res.body.data.achievements).toEqual([
+            'Achievement 1',
+            'Achievement 2',
+          ]);
+        });
+    });
+
+    it('should update project with all optional fields', async () => {
+      const updateData = {
+        name: 'Full Update Test',
+        description: 'Testing all fields',
+        startDate: '2024-03-01',
+        endDate: '2024-12-31',
+        technologies: ['Vue.js', 'Vite'],
+        repositoryLink: 'https://github.com/test/repo',
+        demoLink: 'https://demo.test.com',
+        websiteLink: 'https://test.com',
+        achievements: ['High performance', '100% test coverage'],
+        isHighlighted: false,
+      };
+
+      return request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', validApiKey)
+        .send(updateData)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.repositoryLink).toBe(
+            'https://github.com/test/repo',
+          );
+          expect(res.body.data.demoLink).toBe('https://demo.test.com');
+          expect(res.body.data.websiteLink).toBe('https://test.com');
+          expect(res.body.data.endDate).toBeTruthy();
+        });
+    });
+
+    it('should preserve order field', async () => {
+      // Get current project to check order
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/v1/projects/${projectId}`)
+        .expect(200);
+
+      const originalOrder = getRes.body.data.order;
+
+      // Update project
+      await request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Order Preservation Test',
+          description: 'Testing order preservation',
+          startDate: '2024-04-01',
+          technologies: ['Angular'],
+          isHighlighted: false,
+        })
+        .expect(200);
+
+      // Verify order is preserved
+      return request(app.getHttpServer())
+        .get(`/api/v1/projects/${projectId}`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.order).toBe(originalOrder);
+        });
+    });
+
+    it('should reject update without API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .send({
+          name: 'Updated Name',
+          description: 'Updated description',
+          startDate: '2024-01-01',
+          technologies: ['Python'],
+          isHighlighted: false,
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body).toHaveProperty('message');
+        });
+    });
+
+    it('should reject update with invalid API key', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', 'invalid-key')
+        .send({
+          name: 'Updated Name',
+          description: 'Updated description',
+          startDate: '2024-01-01',
+          technologies: ['Python'],
+          isHighlighted: false,
+        })
+        .expect(401);
+    });
+
+    it('should return 404 for non-existent project', () => {
+      return request(app.getHttpServer())
+        .put('/api/v1/projects/non-existent-id')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Test',
+          description: 'Description',
+          startDate: '2024-01-01',
+          technologies: ['Java'],
+          isHighlighted: false,
+        })
+        .expect(404)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 404);
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should reject duplicate name (different from current)', async () => {
+      // Create another project with a unique name
+      const anotherProject = await request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: `Unique Name ${Date.now()}`,
+          description: 'Another project',
+          startDate: '2024-05-01',
+          technologies: ['Go'],
+        })
+        .expect(201);
+
+      const uniqueName = anotherProject.body.data.name;
+
+      // Try to update first project with the unique name
+      return request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: uniqueName,
+          description: 'Trying to use taken name',
+          startDate: '2024-01-01',
+          technologies: ['TypeScript'],
+          isHighlighted: false,
+        })
+        .expect(409)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 409);
+          expect(res.body.message).toContain('already exists');
+        });
+    });
+
+    it('should allow keeping same name (idempotent update)', async () => {
+      // Get current project name
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/v1/projects/${projectId}`)
+        .expect(200);
+
+      const currentName = getRes.body.data.name;
+
+      // Update with same name
+      return request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: currentName,
+          description: 'Updated description but same name',
+          startDate: '2024-01-01',
+          technologies: ['TypeScript', 'Node.js'],
+          isHighlighted: true,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.name).toBe(currentName);
+          expect(res.body.data.description).toBe(
+            'Updated description but same name',
+          );
+        });
+    });
+
+    it('should update isHighlighted field', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Highlight Test',
+          description: 'Testing highlight update',
+          startDate: '2024-01-01',
+          technologies: ['Rust'],
+          isHighlighted: true,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.isHighlighted).toBe(true);
+        });
+    });
+
+    it('should reject invalid URL format for repositoryLink', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Invalid URL Test',
+          description: 'Testing invalid URL',
+          startDate: '2024-01-01',
+          technologies: ['PHP'],
+          repositoryLink: 'not-a-valid-url',
+          isHighlighted: false,
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+          expect(res.body).toHaveProperty('message');
+        });
+    });
+
+    it('should reject empty technologies array', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Empty Tech Test',
+          description: 'Testing empty technologies',
+          startDate: '2024-01-01',
+          technologies: [],
+          isHighlighted: false,
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+        });
+    });
+
+    it('should verify updated project appears in GET requests', async () => {
+      const updatedName = `Verified Update ${Date.now()}`;
+
+      // Update project
+      await request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: updatedName,
+          description: 'Verification test',
+          startDate: '2024-06-01',
+          technologies: ['Kotlin'],
+          isHighlighted: false,
+        })
+        .expect(200);
+
+      // Verify in GET by ID
+      const getByIdRes = await request(app.getHttpServer())
+        .get(`/api/v1/projects/${projectId}`)
+        .expect(200);
+
+      expect(getByIdRes.body.data.name).toBe(updatedName);
+
+      // Verify in GET all
+      const getAllRes = await request(app.getHttpServer())
+        .get('/api/v1/projects')
+        .expect(200);
+
+      const foundProject = getAllRes.body.data.find(
+        (proj: any) => proj.id === projectId,
+      );
+      expect(foundProject).toBeDefined();
+      expect(foundProject.name).toBe(updatedName);
+    });
+
+    it('should format dates as ISO strings in response', () => {
+      return request(app.getHttpServer())
+        .put(`/api/v1/projects/${projectId}`)
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Date Format Test',
+          description: 'Testing date formatting',
+          startDate: '2024-07-15',
+          endDate: '2024-12-31',
+          technologies: ['Elixir'],
+          isHighlighted: false,
+        })
+        .expect(200)
+        .expect((res) => {
+          // Verify startDate is ISO string
+          expect(typeof res.body.data.startDate).toBe('string');
+          expect(res.body.data.startDate).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+          // Verify endDate is ISO string
+          expect(typeof res.body.data.endDate).toBe('string');
+          expect(res.body.data.endDate).toMatch(/^\d{4}-\d{2}-\d{2}T/);
         });
     });
   });

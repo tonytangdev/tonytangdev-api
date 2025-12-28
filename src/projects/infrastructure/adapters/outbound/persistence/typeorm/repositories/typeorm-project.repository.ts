@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { ProjectRepositoryPort } from '../../../../../../application/ports/outbound/project.repository.port';
 import { Project } from '../../../../../../domain/entities/project.entity';
 import { ProjectOrm } from '../entities/project.entity.orm';
@@ -45,8 +45,24 @@ export class TypeOrmProjectRepository extends ProjectRepositoryPort {
     return this.toDomain(saved);
   }
 
+  async update(project: Project): Promise<Project> {
+    const orm = this.toOrm(project);
+    await this.repository.save(orm);
+    return project;
+  }
+
   async findByName(name: string): Promise<Project | null> {
     const project = await this.repository.findOne({ where: { name } });
+    return project ? this.toDomain(project) : null;
+  }
+
+  async findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<Project | null> {
+    const project = await this.repository.findOne({
+      where: { name, id: Not(excludeId) },
+    });
     return project ? this.toDomain(project) : null;
   }
 

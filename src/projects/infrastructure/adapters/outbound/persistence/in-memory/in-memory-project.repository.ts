@@ -36,8 +36,26 @@ export class InMemoryProjectRepository extends ProjectRepositoryPort {
     return Promise.resolve(project);
   }
 
+  async update(project: Project): Promise<Project> {
+    const index = this.projects.findIndex((p) => p.id === project.id);
+    if (index !== -1) {
+      this.projects[index] = project;
+    }
+    return Promise.resolve(project);
+  }
+
   async findByName(name: string): Promise<Project | null> {
     const project = this.projects.find((p) => p.name === name);
+    return Promise.resolve(project || null);
+  }
+
+  async findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<Project | null> {
+    const project = this.projects.find(
+      (p) => p.name === name && p.id !== excludeId,
+    );
     return Promise.resolve(project || null);
   }
 

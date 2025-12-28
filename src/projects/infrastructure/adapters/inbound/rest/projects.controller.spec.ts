@@ -5,6 +5,7 @@ import { GetProjectsUseCase } from '../../../../application/ports/inbound/get-pr
 import { GetProjectByIdUseCase } from '../../../../application/ports/inbound/get-project-by-id.use-case';
 import { GetProjectsByTechnologyUseCase } from '../../../../application/ports/inbound/get-projects-by-technology.use-case';
 import { CreateProjectUseCase } from '../../../../application/ports/inbound/create-project.use-case';
+import { UpdateProjectUseCase } from '../../../../application/ports/inbound/update-project.use-case';
 import { ProjectMapper } from '../mappers/project.mapper';
 import { Project } from '../../../../domain/entities/project.entity';
 import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
@@ -15,6 +16,7 @@ describe('ProjectsController', () => {
   let getProjectByIdUseCase: jest.Mocked<GetProjectByIdUseCase>;
   let getProjectsByTechnologyUseCase: jest.Mocked<GetProjectsByTechnologyUseCase>;
   let createProjectUseCase: jest.Mocked<CreateProjectUseCase>;
+  let updateProjectUseCase: jest.Mocked<UpdateProjectUseCase>;
 
   beforeEach(async () => {
     const mockGetProjectsUseCase = {
@@ -33,6 +35,10 @@ describe('ProjectsController', () => {
       execute: jest.fn(),
     };
 
+    const mockUpdateProjectUseCase = {
+      execute: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProjectsController],
       providers: [
@@ -46,6 +52,7 @@ describe('ProjectsController', () => {
           useValue: mockGetProjectsByTechnologyUseCase,
         },
         { provide: CreateProjectUseCase, useValue: mockCreateProjectUseCase },
+        { provide: UpdateProjectUseCase, useValue: mockUpdateProjectUseCase },
         ProjectMapper,
       ],
     })
@@ -58,6 +65,7 @@ describe('ProjectsController', () => {
     getProjectByIdUseCase = module.get(GetProjectByIdUseCase);
     getProjectsByTechnologyUseCase = module.get(GetProjectsByTechnologyUseCase);
     createProjectUseCase = module.get(CreateProjectUseCase);
+    updateProjectUseCase = module.get(UpdateProjectUseCase);
   });
 
   it('should be defined', () => {
@@ -373,6 +381,127 @@ describe('ProjectsController', () => {
       );
       expect(result.data).toHaveLength(0);
       expect(result.meta).toEqual({ total: 0 });
+    });
+  });
+
+  describe('updateProject', () => {
+    it('should update a project and return response', async () => {
+      const dto = {
+        name: 'Updated Project',
+        description: 'Updated description',
+        startDate: '2024-02-01',
+        endDate: '2024-06-30',
+        technologies: ['TypeScript', 'React'],
+        repositoryLink: 'https://github.com/user/updated',
+        demoLink: 'https://demo.updated.com',
+        websiteLink: 'https://updated.com',
+        achievements: ['Achievement 1'],
+        isHighlighted: true,
+      };
+
+      const updatedProject = new Project({
+        id: 'proj-123',
+        name: 'Updated Project',
+        description: 'Updated description',
+        startDate: new Date('2024-02-01'),
+        endDate: new Date('2024-06-30'),
+        technologies: ['TypeScript', 'React'],
+        repositoryLink: 'https://github.com/user/updated',
+        demoLink: 'https://demo.updated.com',
+        websiteLink: 'https://updated.com',
+        achievements: ['Achievement 1'],
+        order: 5,
+        isHighlighted: true,
+      });
+
+      updateProjectUseCase.execute.mockResolvedValue(updatedProject);
+
+      const result = await controller.updateProject('proj-123', dto);
+
+      expect(updateProjectUseCase.execute).toHaveBeenCalledWith({
+        id: 'proj-123',
+        ...dto,
+      });
+      expect(result.data).toHaveProperty('id', 'proj-123');
+      expect(result.data).toHaveProperty('name', 'Updated Project');
+      expect(result.data).toHaveProperty('isHighlighted', true);
+      expect(result.meta).toEqual({});
+    });
+
+    it('should update project with minimal fields', async () => {
+      const dto = {
+        name: 'Minimal Update',
+        description: 'Updated description',
+        startDate: '2024-03-01',
+        technologies: ['Vue.js'],
+        isHighlighted: false,
+      };
+
+      const updatedProject = new Project({
+        id: 'proj-456',
+        name: 'Minimal Update',
+        description: 'Updated description',
+        startDate: new Date('2024-03-01'),
+        endDate: null,
+        technologies: ['Vue.js'],
+        repositoryLink: null,
+        demoLink: null,
+        websiteLink: null,
+        achievements: [],
+        order: 2,
+        isHighlighted: false,
+      });
+
+      updateProjectUseCase.execute.mockResolvedValue(updatedProject);
+
+      const result = await controller.updateProject('proj-456', dto);
+
+      expect(result.data.endDate).toBeNull();
+      expect(result.data.repositoryLink).toBeNull();
+      expect(result.data.demoLink).toBeNull();
+      expect(result.data.websiteLink).toBeNull();
+    });
+
+    it('should map domain entity to response DTO correctly', async () => {
+      const dto = {
+        name: 'Mapping Test',
+        description: 'Testing DTO mapping',
+        startDate: '2024-04-01',
+        technologies: ['Angular'],
+        isHighlighted: false,
+      };
+
+      const updatedProject = new Project({
+        id: 'proj-789',
+        name: 'Mapping Test',
+        description: 'Testing DTO mapping',
+        startDate: new Date('2024-04-01'),
+        endDate: null,
+        technologies: ['Angular'],
+        repositoryLink: null,
+        demoLink: null,
+        websiteLink: null,
+        achievements: [],
+        order: 3,
+        isHighlighted: false,
+      });
+
+      updateProjectUseCase.execute.mockResolvedValue(updatedProject);
+
+      const result = await controller.updateProject('proj-789', dto);
+
+      // Verify response structure
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('meta');
+      expect(result.meta).toEqual({});
+
+      // Verify data properties
+      expect(result.data).toHaveProperty('id');
+      expect(result.data).toHaveProperty('name');
+      expect(result.data).toHaveProperty('description');
+      expect(result.data).toHaveProperty('startDate');
+      expect(result.data).toHaveProperty('technologies');
+      expect(result.data).toHaveProperty('isHighlighted');
     });
   });
 });

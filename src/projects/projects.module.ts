@@ -12,6 +12,7 @@ import { GetProjectsUseCase } from './application/ports/inbound/get-projects.use
 import { GetProjectByIdUseCase } from './application/ports/inbound/get-project-by-id.use-case';
 import { GetProjectsByTechnologyUseCase } from './application/ports/inbound/get-projects-by-technology.use-case';
 import { CreateProjectUseCase } from './application/ports/inbound/create-project.use-case';
+import { UpdateProjectUseCase } from './application/ports/inbound/update-project.use-case';
 
 // Application ports (outbound)
 import { ProjectRepositoryPort } from './application/ports/outbound/project.repository.port';
@@ -21,6 +22,7 @@ import { GetProjectsService } from './application/services/get-projects.service'
 import { GetProjectByIdService } from './application/services/get-project-by-id.service';
 import { GetProjectsByTechnologyService } from './application/services/get-projects-by-technology.service';
 import { CreateProjectService } from './application/services/create-project.service';
+import { UpdateProjectService } from './application/services/update-project.service';
 
 // Infrastructure adapters (outbound) - In-Memory
 import { InMemoryProjectRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-project.repository';
@@ -55,6 +57,7 @@ export class ProjectsModule {
           useClass: GetProjectsByTechnologyService,
         },
         { provide: CreateProjectUseCase, useClass: CreateProjectService },
+        { provide: UpdateProjectUseCase, useClass: UpdateProjectService },
         {
           provide: ProjectRepositoryPort,
           useClass: InMemoryProjectRepository,
@@ -113,6 +116,7 @@ export class ProjectsModule {
           useClass: GetProjectsByTechnologyService,
         },
         { provide: CreateProjectUseCase, useClass: CreateProjectService },
+        { provide: UpdateProjectUseCase, useClass: UpdateProjectService },
 
         // Outbound adapters (repositories)
         ...repoProviders,

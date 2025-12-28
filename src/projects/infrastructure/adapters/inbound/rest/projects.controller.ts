@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   NotFoundException,
   Param,
   Body,
@@ -20,9 +21,11 @@ import { GetProjectsUseCase } from '../../../../application/ports/inbound/get-pr
 import { GetProjectByIdUseCase } from '../../../../application/ports/inbound/get-project-by-id.use-case';
 import { GetProjectsByTechnologyUseCase } from '../../../../application/ports/inbound/get-projects-by-technology.use-case';
 import { CreateProjectUseCase } from '../../../../application/ports/inbound/create-project.use-case';
+import { UpdateProjectUseCase } from '../../../../application/ports/inbound/update-project.use-case';
 import { ProjectMapper } from '../mappers/project.mapper';
 import { ProjectResponseDto } from './dto/project-response.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
 
 @ApiTags('projects')
@@ -33,6 +36,7 @@ export class ProjectsController {
     private readonly getProjectByIdUseCase: GetProjectByIdUseCase,
     private readonly getProjectsByTechnologyUseCase: GetProjectsByTechnologyUseCase,
     private readonly createProjectUseCase: CreateProjectUseCase,
+    private readonly updateProjectUseCase: UpdateProjectUseCase,
     private readonly projectMapper: ProjectMapper,
   ) {}
 
@@ -68,6 +72,27 @@ export class ProjectsController {
   @ApiBearerAuth('api-key')
   async createProject(@Body() dto: CreateProjectDto) {
     const project = await this.createProjectUseCase.execute(dto);
+    const data = this.projectMapper.toDto(project);
+    return { data, meta: {} };
+  }
+
+  @Put(':id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Update an existing project' })
+  @ApiResponse({
+    status: 200,
+    description: 'Project updated successfully',
+    type: ProjectResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 401, description: 'Invalid API key' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  @ApiResponse({ status: 409, description: 'Project name already exists' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiBody({ type: UpdateProjectDto })
+  @ApiBearerAuth('api-key')
+  async updateProject(@Param('id') id: string, @Body() dto: UpdateProjectDto) {
+    const project = await this.updateProjectUseCase.execute({ id, ...dto });
     const data = this.projectMapper.toDto(project);
     return { data, meta: {} };
   }

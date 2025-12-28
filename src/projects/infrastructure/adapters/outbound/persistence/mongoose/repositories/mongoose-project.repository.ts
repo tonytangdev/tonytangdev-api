@@ -38,8 +38,25 @@ export class MongooseProjectRepository extends ProjectRepositoryPort {
     return this.toDomain(saved);
   }
 
+  async update(project: Project): Promise<Project> {
+    await this.model
+      .updateOne({ _id: project.id }, this.toDocument(project))
+      .exec();
+    return project;
+  }
+
   async findByName(name: string): Promise<Project | null> {
     const doc = await this.model.findOne({ name }).exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async findByNameExcludingId(
+    name: string,
+    excludeId: string,
+  ): Promise<Project | null> {
+    const doc = await this.model
+      .findOne({ name, _id: { $ne: excludeId } })
+      .exec();
     return doc ? this.toDomain(doc) : null;
   }
 
