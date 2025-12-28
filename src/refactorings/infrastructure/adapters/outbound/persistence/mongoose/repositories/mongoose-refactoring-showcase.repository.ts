@@ -75,6 +75,40 @@ export class MongooseRefactoringShowcaseRepository extends RefactoringShowcaseRe
     return docs.map((doc) => this.toDomain(doc));
   }
 
+  async create(showcase: RefactoringShowcase): Promise<RefactoringShowcase> {
+    const doc = new this.model({
+      _id: showcase.id,
+      title: showcase.title,
+      description: showcase.description,
+      technologies: showcase.technologies,
+      difficulty: showcase.difficulty,
+      tags: showcase.tags,
+      order: showcase.order,
+      isHighlighted: showcase.isHighlighted,
+      steps: showcase.steps.map((step) => ({
+        id: step.id,
+        showcaseId: step.showcaseId,
+        title: step.title,
+        description: step.description,
+        explanation: step.explanation,
+        order: step.order,
+        files: step.files.map((file) => ({
+          filename: file.filename,
+          language: file.language,
+          content: file.content,
+          order: file.order,
+        })),
+      })),
+    });
+    const saved = await doc.save();
+    return this.toDomain(saved);
+  }
+
+  async getMaxOrder(): Promise<number> {
+    const doc = await this.model.findOne().sort({ order: -1 }).exec();
+    return doc?.order ?? 0;
+  }
+
   private toDomain(doc: RefactoringShowcaseDocument): RefactoringShowcase {
     return new RefactoringShowcase({
       id: doc._id,

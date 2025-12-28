@@ -71,4 +71,17 @@ export class InMemoryRefactoringShowcaseRepository extends RefactoringShowcaseRe
         .sort((a, b) => a.order - b.order),
     );
   }
+
+  async create(showcase: RefactoringShowcase): Promise<RefactoringShowcase> {
+    this.showcases.push(showcase);
+    return Promise.resolve(showcase);
+  }
+
+  async getMaxOrder(): Promise<number> {
+    if (this.showcases.length === 0) {
+      return Promise.resolve(0);
+    }
+    const maxOrder = Math.max(...this.showcases.map((s) => s.order));
+    return Promise.resolve(maxOrder);
+  }
 }

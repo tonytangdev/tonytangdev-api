@@ -6,9 +6,11 @@ import refactoringsConfig from './refactorings.config';
 import { GetRefactoringShowcasesUseCase } from './application/ports/inbound/get-refactoring-showcases.use-case';
 import { GetRefactoringShowcaseByIdUseCase } from './application/ports/inbound/get-refactoring-showcase-by-id.use-case';
 import { GetHighlightedRefactoringShowcasesUseCase } from './application/ports/inbound/get-highlighted-refactoring-showcases.use-case';
+import { CreateRefactoringShowcaseUseCase } from './application/ports/inbound/create-refactoring-showcase.use-case';
 import { GetRefactoringShowcasesService } from './application/services/get-refactoring-showcases.service';
 import { GetRefactoringShowcaseByIdService } from './application/services/get-refactoring-showcase-by-id.service';
 import { GetHighlightedRefactoringShowcasesService } from './application/services/get-highlighted-refactoring-showcases.service';
+import { CreateRefactoringShowcaseService } from './application/services/create-refactoring-showcase.service';
 import { RefactoringShowcaseRepositoryPort } from './application/ports/outbound/refactoring-showcase.repository.port';
 import { InMemoryRefactoringShowcaseRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-refactoring-showcase.repository';
 import { TypeOrmRefactoringShowcaseRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-refactoring-showcase.repository';
@@ -41,6 +43,10 @@ export class RefactoringsModule {
         {
           provide: GetHighlightedRefactoringShowcasesUseCase,
           useClass: GetHighlightedRefactoringShowcasesService,
+        },
+        {
+          provide: CreateRefactoringShowcaseUseCase,
+          useClass: CreateRefactoringShowcaseService,
         },
         {
           provide: RefactoringShowcaseRepositoryPort,
@@ -111,6 +117,10 @@ export class RefactoringsModule {
         {
           provide: GetHighlightedRefactoringShowcasesUseCase,
           useClass: GetHighlightedRefactoringShowcasesService,
+        },
+        {
+          provide: CreateRefactoringShowcaseUseCase,
+          useClass: CreateRefactoringShowcaseService,
         },
         ...repoProviders,
         RefactoringShowcaseMapper,

@@ -326,6 +326,280 @@ describe('Refactorings API (e2e)', () => {
     });
   });
 
+  describe('POST /api/v1/refactorings', () => {
+    const validApiKey = 'test-api-key';
+
+    it('should create showcase with valid data and nested structure', () => {
+      const showcaseName = `Test Showcase ${Date.now()}`;
+      return request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: showcaseName,
+          description: 'Test description',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: ['test'],
+          steps: [
+            {
+              title: 'Step 1',
+              description: 'First step',
+              explanation: 'Explanation 1',
+              files: [
+                {
+                  filename: 'test.ts',
+                  language: 'typescript',
+                  content: 'code here',
+                },
+              ],
+            },
+          ],
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data');
+          expect(res.body).toHaveProperty('meta');
+          expect(res.body.data.title).toBe(showcaseName);
+          expect(res.body.data.steps).toHaveLength(1);
+          expect(res.body.data.steps[0].files).toHaveLength(1);
+        });
+    });
+
+    it('should return created showcase with generated IDs', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'ID Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [],
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data).toHaveProperty('id');
+          expect(res.body.data.id).toMatch(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+          );
+        });
+    });
+
+    it('should auto-assign order values', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Order Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [
+            {
+              title: 'Step 1',
+              description: 'First',
+              explanation: 'Explain 1',
+              files: [
+                { filename: 'a.ts', language: 'typescript', content: 'a' },
+                { filename: 'b.ts', language: 'typescript', content: 'b' },
+              ],
+            },
+            {
+              title: 'Step 2',
+              description: 'Second',
+              explanation: 'Explain 2',
+              files: [],
+            },
+          ],
+        })
+        .expect(201);
+
+      expect(createRes.body.data.steps[0].order).toBe(0);
+      expect(createRes.body.data.steps[1].order).toBe(1);
+      expect(createRes.body.data.steps[0].files[0].order).toBe(0);
+      expect(createRes.body.data.steps[0].files[1].order).toBe(1);
+    });
+
+    it('should default isHighlighted to false', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Highlight Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [],
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.isHighlighted).toBe(false);
+        });
+    });
+
+    it('should accept isHighlighted: true', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Highlight True Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          isHighlighted: true,
+          steps: [],
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.isHighlighted).toBe(true);
+        });
+    });
+
+    it('should reject request without API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .send({
+          title: 'Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [],
+        })
+        .expect(401);
+    });
+
+    it('should reject request with invalid API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', 'invalid-key')
+        .send({
+          title: 'Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [],
+        })
+        .expect(401);
+    });
+
+    it('should reject missing required fields', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Test',
+        })
+        .expect(400);
+    });
+
+    it('should reject invalid difficulty enum', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'invalid',
+          tags: [],
+          steps: [],
+        })
+        .expect(400);
+    });
+
+    it('should validate nested step structure', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [{ title: 'Step without required fields' }],
+        })
+        .expect(400);
+    });
+
+    it('should validate nested file structure', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [
+            {
+              title: 'Step 1',
+              description: 'Desc',
+              explanation: 'Explain',
+              files: [{ filename: 'test.ts' }],
+            },
+          ],
+        })
+        .expect(400);
+    });
+
+    it('should include created showcase in GET response', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: `Include Test ${Date.now()}`,
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [],
+        })
+        .expect(201);
+
+      const showcaseId = createRes.body.data.id;
+
+      const getRes = await request(app.getHttpServer())
+        .get('/api/v1/refactorings')
+        .expect(200);
+
+      const found = getRes.body.data.find((s: any) => s.id === showcaseId);
+      expect(found).toBeDefined();
+    });
+
+    it('should be retrievable by ID', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: 'Retrieve Test',
+          description: 'Test',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: [],
+          steps: [],
+        })
+        .expect(201);
+
+      const showcaseId = createRes.body.data.id;
+
+      return request(app.getHttpServer())
+        .get(`/api/v1/refactorings/${showcaseId}`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.id).toBe(showcaseId);
+          expect(res.body.data.title).toBe('Retrieve Test');
+        });
+    });
+  });
+
   describe('CORS', () => {
     it('should have CORS enabled', () => {
       return request(app.getHttpServer())
