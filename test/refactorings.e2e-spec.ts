@@ -1000,6 +1000,86 @@ describe('Refactorings API (e2e)', () => {
     });
   });
 
+  describe('DELETE /api/v1/refactorings/:id', () => {
+    const validApiKey = 'test-api-key';
+
+    it('should delete showcase with valid API key', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: `Delete Test ${Date.now()}`,
+          description: 'To be deleted',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: ['test'],
+          steps: [],
+        })
+        .expect(201);
+
+      const showcaseId = createRes.body.data.id;
+
+      return request(app.getHttpServer())
+        .delete(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data).toBeNull();
+          expect(res.body.meta).toEqual({});
+        });
+    });
+
+    it('should return 401 without API key', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/refactorings/some-id')
+        .expect(401);
+    });
+
+    it('should return 401 with invalid API key', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/refactorings/some-id')
+        .set('x-api-key', 'invalid-key')
+        .expect(401);
+    });
+
+    it('should return 404 for non-existent showcase', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/refactorings/non-existent-id')
+        .set('x-api-key', validApiKey)
+        .expect(404)
+        .expect((res) => {
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should actually delete the showcase', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/refactorings')
+        .set('x-api-key', validApiKey)
+        .send({
+          title: `Actual Delete Test ${Date.now()}`,
+          description: 'To be deleted',
+          technologies: ['TypeScript'],
+          difficulty: 'beginner',
+          tags: ['test'],
+          steps: [],
+        })
+        .expect(201);
+
+      const showcaseId = createRes.body.data.id;
+
+      await request(app.getHttpServer())
+        .delete(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .expect(200);
+
+      return request(app.getHttpServer())
+        .delete(`/api/v1/refactorings/${showcaseId}`)
+        .set('x-api-key', validApiKey)
+        .expect(404);
+    });
+  });
+
   describe('CORS', () => {
     it('should have CORS enabled', () => {
       return request(app.getHttpServer())

@@ -100,4 +100,12 @@ export class InMemoryRefactoringShowcaseRepository extends RefactoringShowcaseRe
     const maxOrder = Math.max(...this.showcases.map((s) => s.order));
     return Promise.resolve(maxOrder);
   }
+
+  async delete(id: string): Promise<void> {
+    const index = this.showcases.findIndex((s) => s.id === id);
+    if (index !== -1) {
+      this.showcases.splice(index, 1);
+    }
+    return Promise.resolve();
+  }
 }

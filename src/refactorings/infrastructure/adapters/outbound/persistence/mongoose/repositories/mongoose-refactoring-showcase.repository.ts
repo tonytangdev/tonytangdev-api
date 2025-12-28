@@ -185,6 +185,10 @@ export class MongooseRefactoringShowcaseRepository extends RefactoringShowcaseRe
     return doc?.order ?? 0;
   }
 
+  async delete(id: string): Promise<void> {
+    await this.model.findByIdAndDelete(id).exec();
+  }
+
   private toDomain(doc: RefactoringShowcaseDocument): RefactoringShowcase {
     return new RefactoringShowcase({
       id: doc._id,

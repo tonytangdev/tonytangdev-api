@@ -6,6 +6,7 @@ import { GetHighlightedRefactoringShowcasesUseCase } from '../../../../applicati
 import { CreateRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/create-refactoring-showcase.use-case';
 import { UpdateRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/update-refactoring-showcase.use-case';
 import { PatchRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/patch-refactoring-showcase.use-case';
+import { DeleteRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/delete-refactoring-showcase.use-case';
 import { RefactoringShowcaseMapper } from '../mappers/refactoring-showcase.mapper';
 import { RefactoringShowcase } from '../../../../domain/entities/refactoring-showcase.entity';
 import { DifficultyLevel } from '../../../../domain/value-objects/difficulty-level.vo';
@@ -16,6 +17,7 @@ describe('RefactoringsController', () => {
   let createRefactoringShowcaseUseCase: jest.Mocked<CreateRefactoringShowcaseUseCase>;
   let updateRefactoringShowcaseUseCase: jest.Mocked<UpdateRefactoringShowcaseUseCase>;
   let patchRefactoringShowcaseUseCase: jest.Mocked<PatchRefactoringShowcaseUseCase>;
+  let deleteRefactoringShowcaseUseCase: jest.Mocked<DeleteRefactoringShowcaseUseCase>;
 
   beforeEach(async () => {
     const mockGetRefactoringShowcasesUseCase = {
@@ -39,6 +41,10 @@ describe('RefactoringsController', () => {
     };
 
     const mockPatchRefactoringShowcaseUseCase = {
+      execute: jest.fn(),
+    };
+
+    const mockDeleteRefactoringShowcaseUseCase = {
       execute: jest.fn(),
     };
 
@@ -69,6 +75,10 @@ describe('RefactoringsController', () => {
           provide: PatchRefactoringShowcaseUseCase,
           useValue: mockPatchRefactoringShowcaseUseCase,
         },
+        {
+          provide: DeleteRefactoringShowcaseUseCase,
+          useValue: mockDeleteRefactoringShowcaseUseCase,
+        },
         RefactoringShowcaseMapper,
       ],
     })
@@ -85,6 +95,9 @@ describe('RefactoringsController', () => {
     );
     patchRefactoringShowcaseUseCase = module.get(
       PatchRefactoringShowcaseUseCase,
+    );
+    deleteRefactoringShowcaseUseCase = module.get(
+      DeleteRefactoringShowcaseUseCase,
     );
   });
 
@@ -314,6 +327,19 @@ describe('RefactoringsController', () => {
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('meta');
       expect(result.meta).toEqual({});
+    });
+  });
+
+  describe('deleteRefactoringShowcase', () => {
+    it('should delete showcase successfully', async () => {
+      deleteRefactoringShowcaseUseCase.execute.mockResolvedValue(undefined);
+
+      const result = await controller.deleteRefactoringShowcase('test-id');
+
+      expect(deleteRefactoringShowcaseUseCase.execute).toHaveBeenCalledWith({
+        id: 'test-id',
+      });
+      expect(result).toEqual({ data: null, meta: {} });
     });
   });
 });

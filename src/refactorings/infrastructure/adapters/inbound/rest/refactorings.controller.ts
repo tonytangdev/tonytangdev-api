@@ -4,6 +4,7 @@ import {
   Post,
   Put,
   Patch,
+  Delete,
   Body,
   NotFoundException,
   Param,
@@ -19,6 +20,7 @@ import {
   ApiNotFoundResponse,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { GetRefactoringShowcasesUseCase } from '../../../../application/ports/inbound/get-refactoring-showcases.use-case';
 import { GetRefactoringShowcaseByIdUseCase } from '../../../../application/ports/inbound/get-refactoring-showcase-by-id.use-case';
@@ -26,6 +28,7 @@ import { GetHighlightedRefactoringShowcasesUseCase } from '../../../../applicati
 import { CreateRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/create-refactoring-showcase.use-case';
 import { UpdateRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/update-refactoring-showcase.use-case';
 import { PatchRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/patch-refactoring-showcase.use-case';
+import { DeleteRefactoringShowcaseUseCase } from '../../../../application/ports/inbound/delete-refactoring-showcase.use-case';
 import { RefactoringShowcaseMapper } from '../mappers/refactoring-showcase.mapper';
 import { DifficultyLevel } from '../../../../domain/value-objects/difficulty-level.vo';
 import { RefactoringShowcaseListDto } from './dto/refactoring-showcase-list.dto';
@@ -45,6 +48,7 @@ export class RefactoringsController {
     private readonly createRefactoringShowcaseUseCase: CreateRefactoringShowcaseUseCase,
     private readonly updateRefactoringShowcaseUseCase: UpdateRefactoringShowcaseUseCase,
     private readonly patchRefactoringShowcaseUseCase: PatchRefactoringShowcaseUseCase,
+    private readonly deleteRefactoringShowcaseUseCase: DeleteRefactoringShowcaseUseCase,
     private readonly refactoringShowcaseMapper: RefactoringShowcaseMapper,
   ) {}
 
@@ -235,5 +239,21 @@ export class RefactoringsController {
       data,
       meta: {},
     };
+  }
+
+  @Delete(':id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Delete a refactoring showcase' })
+  @ApiParam({ name: 'id', description: 'Refactoring showcase ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Refactoring showcase deleted successfully',
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing API key' })
+  @ApiNotFoundResponse({ description: 'Refactoring showcase not found' })
+  @ApiBearerAuth('api-key')
+  async deleteRefactoringShowcase(@Param('id') id: string) {
+    await this.deleteRefactoringShowcaseUseCase.execute({ id });
+    return { data: null, meta: {} };
   }
 }

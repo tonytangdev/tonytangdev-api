@@ -31,4 +31,5 @@ export abstract class RefactoringShowcaseRepositoryPort {
   abstract update(showcase: RefactoringShowcase): Promise<RefactoringShowcase>;
   abstract patch(showcase: RefactoringShowcase): Promise<RefactoringShowcase>;
   abstract getMaxOrder(): Promise<number>;
+  abstract delete(id: string): Promise<void>;
 }

@@ -29,7 +29,9 @@ export class RefactoringStepOrm {
   @Column('int')
   order: number;
 
-  @ManyToOne(() => RefactoringShowcaseOrm, (showcase) => showcase.steps)
+  @ManyToOne(() => RefactoringShowcaseOrm, (showcase) => showcase.steps, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'showcaseId' })
   showcase: RefactoringShowcaseOrm;
 

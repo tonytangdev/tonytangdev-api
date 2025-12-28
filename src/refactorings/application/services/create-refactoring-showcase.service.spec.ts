@@ -15,6 +15,7 @@ describe('CreateRefactoringShowcaseService', () => {
       create: jest.fn(),
       update: jest.fn(),
       patch: jest.fn(),
+      delete: jest.fn(),
     };
 
     service = new CreateRefactoringShowcaseService(mockRepository);

@@ -135,6 +135,10 @@ export class TypeOrmRefactoringShowcaseRepository extends RefactoringShowcaseRep
     return result?.max ?? 0;
   }
 
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
+
   private toOrm(showcase: RefactoringShowcase): RefactoringShowcaseOrm {
     const orm = new RefactoringShowcaseOrm();
     orm.id = showcase.id;

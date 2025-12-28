@@ -9,12 +9,14 @@ import { GetHighlightedRefactoringShowcasesUseCase } from './application/ports/i
 import { CreateRefactoringShowcaseUseCase } from './application/ports/inbound/create-refactoring-showcase.use-case';
 import { UpdateRefactoringShowcaseUseCase } from './application/ports/inbound/update-refactoring-showcase.use-case';
 import { PatchRefactoringShowcaseUseCase } from './application/ports/inbound/patch-refactoring-showcase.use-case';
+import { DeleteRefactoringShowcaseUseCase } from './application/ports/inbound/delete-refactoring-showcase.use-case';
 import { GetRefactoringShowcasesService } from './application/services/get-refactoring-showcases.service';
 import { GetRefactoringShowcaseByIdService } from './application/services/get-refactoring-showcase-by-id.service';
 import { GetHighlightedRefactoringShowcasesService } from './application/services/get-highlighted-refactoring-showcases.service';
 import { CreateRefactoringShowcaseService } from './application/services/create-refactoring-showcase.service';
 import { UpdateRefactoringShowcaseService } from './application/services/update-refactoring-showcase.service';
 import { PatchRefactoringShowcaseService } from './application/services/patch-refactoring-showcase.service';
+import { DeleteRefactoringShowcaseService } from './application/services/delete-refactoring-showcase.service';
 import { RefactoringShowcaseRepositoryPort } from './application/ports/outbound/refactoring-showcase.repository.port';
 import { InMemoryRefactoringShowcaseRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-refactoring-showcase.repository';
 import { TypeOrmRefactoringShowcaseRepository } from './infrastructure/adapters/outbound/persistence/typeorm/repositories/typeorm-refactoring-showcase.repository';
@@ -59,6 +61,10 @@ export class RefactoringsModule {
         {
           provide: PatchRefactoringShowcaseUseCase,
           useClass: PatchRefactoringShowcaseService,
+        },
+        {
+          provide: DeleteRefactoringShowcaseUseCase,
+          useClass: DeleteRefactoringShowcaseService,
         },
         {
           provide: RefactoringShowcaseRepositoryPort,
@@ -141,6 +147,10 @@ export class RefactoringsModule {
         {
           provide: PatchRefactoringShowcaseUseCase,
           useClass: PatchRefactoringShowcaseService,
+        },
+        {
+          provide: DeleteRefactoringShowcaseUseCase,
+          useClass: DeleteRefactoringShowcaseService,
         },
         ...repoProviders,
         RefactoringShowcaseMapper,

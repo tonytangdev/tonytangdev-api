@@ -27,7 +27,9 @@ export class RefactoringFileOrm {
   @Column('uuid')
   stepId: string;
 
-  @ManyToOne(() => RefactoringStepOrm, (step) => step.files)
+  @ManyToOne(() => RefactoringStepOrm, (step) => step.files, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'stepId' })
   step: RefactoringStepOrm;
 }

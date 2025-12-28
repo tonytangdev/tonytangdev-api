@@ -16,6 +16,8 @@ describe('UpdateRefactoringShowcaseService', () => {
       getMaxOrder: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      patch: jest.fn(),
+      delete: jest.fn(),
     } as any;
 
     service = new UpdateRefactoringShowcaseService(mockRepository);
