@@ -13,6 +13,7 @@ import { GetHighlightedExperiencesUseCase } from './application/ports/inbound/ge
 import { GetCurrentExperienceUseCase } from './application/ports/inbound/get-current-experience.use-case';
 import { CreateExperienceUseCase } from './application/ports/inbound/create-experience.use-case';
 import { UpdateExperienceUseCase } from './application/ports/inbound/update-experience.use-case';
+import { DeleteExperienceUseCase } from './application/ports/inbound/delete-experience.use-case';
 
 // Application ports (outbound)
 import { ExperienceRepositoryPort } from './application/ports/outbound/experience.repository.port';
@@ -23,6 +24,7 @@ import { GetHighlightedExperiencesService } from './application/services/get-hig
 import { GetCurrentExperienceService } from './application/services/get-current-experience.service';
 import { CreateExperienceService } from './application/services/create-experience.service';
 import { UpdateExperienceService } from './application/services/update-experience.service';
+import { DeleteExperienceService } from './application/services/delete-experience.service';
 
 // Infrastructure adapters (outbound) - In-Memory
 import { InMemoryExperienceRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-experience.repository';
@@ -66,6 +68,10 @@ export class ExperiencesModule {
         {
           provide: UpdateExperienceUseCase,
           useClass: UpdateExperienceService,
+        },
+        {
+          provide: DeleteExperienceUseCase,
+          useClass: DeleteExperienceService,
         },
         {
           provide: ExperienceRepositoryPort,
@@ -136,6 +142,10 @@ export class ExperiencesModule {
         {
           provide: UpdateExperienceUseCase,
           useClass: UpdateExperienceService,
+        },
+        {
+          provide: DeleteExperienceUseCase,
+          useClass: DeleteExperienceService,
         },
 
         // Outbound adapters (repositories)

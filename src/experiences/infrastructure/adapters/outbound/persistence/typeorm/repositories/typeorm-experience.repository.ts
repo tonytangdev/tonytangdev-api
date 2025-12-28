@@ -85,6 +85,10 @@ export class TypeOrmExperienceRepository extends ExperienceRepositoryPort {
     return result?.maxOrder ?? 0;
   }
 
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
+
   private toDomain(orm: ExperienceOrm): Experience {
     return new Experience({
       id: orm.id,

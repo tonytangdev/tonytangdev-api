@@ -728,6 +728,84 @@ describe('Experiences API (e2e)', () => {
     });
   });
 
+  describe('DELETE /api/v1/experiences/:id', () => {
+    it('should delete experience with valid API key', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/experiences')
+        .set('x-api-key', validApiKey)
+        .send({
+          company: `DeleteTest ${Date.now()}`,
+          title: 'Engineer',
+          startDate: '2024-01-15',
+          description: 'To be deleted',
+          technologies: ['TypeScript'],
+          location: 'SF',
+        })
+        .expect(201);
+
+      const experienceId = createRes.body.data.id;
+
+      return request(app.getHttpServer())
+        .delete(`/api/v1/experiences/${experienceId}`)
+        .set('x-api-key', validApiKey)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data).toBeNull();
+          expect(res.body.meta).toEqual({});
+        });
+    });
+
+    it('should return 401 without API key', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/experiences/some-id')
+        .expect(401);
+    });
+
+    it('should return 401 with invalid API key', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/experiences/some-id')
+        .set('x-api-key', 'invalid-key')
+        .expect(401);
+    });
+
+    it('should return 404 for non-existent experience', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/experiences/non-existent-id')
+        .set('x-api-key', validApiKey)
+        .expect(404)
+        .expect((res) => {
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should actually delete the experience', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/experiences')
+        .set('x-api-key', validApiKey)
+        .send({
+          company: `ActualDeleteTest ${Date.now()}`,
+          title: 'Engineer',
+          startDate: '2024-01-15',
+          description: 'To be deleted',
+          technologies: ['TypeScript'],
+          location: 'SF',
+        })
+        .expect(201);
+
+      const experienceId = createRes.body.data.id;
+
+      await request(app.getHttpServer())
+        .delete(`/api/v1/experiences/${experienceId}`)
+        .set('x-api-key', validApiKey)
+        .expect(200);
+
+      return request(app.getHttpServer())
+        .delete(`/api/v1/experiences/${experienceId}`)
+        .set('x-api-key', validApiKey)
+        .expect(404);
+    });
+  });
+
   describe('CORS', () => {
     it('should have CORS enabled', () => {
       return request(app.getHttpServer())

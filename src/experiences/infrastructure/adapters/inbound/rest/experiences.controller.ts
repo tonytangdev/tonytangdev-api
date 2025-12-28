@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -16,12 +17,15 @@ import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
   ApiConflictResponse,
+  ApiBearerAuth,
+  ApiParam,
 } from '@nestjs/swagger';
 import { GetExperiencesUseCase } from '../../../../application/ports/inbound/get-experiences.use-case';
 import { GetHighlightedExperiencesUseCase } from '../../../../application/ports/inbound/get-highlighted-experiences.use-case';
 import { GetCurrentExperienceUseCase } from '../../../../application/ports/inbound/get-current-experience.use-case';
 import { CreateExperienceUseCase } from '../../../../application/ports/inbound/create-experience.use-case';
 import { UpdateExperienceUseCase } from '../../../../application/ports/inbound/update-experience.use-case';
+import { DeleteExperienceUseCase } from '../../../../application/ports/inbound/delete-experience.use-case';
 import { ExperienceMapper } from '../mappers/experience.mapper';
 import { ExperienceResponseDto } from './dto/experience-response.dto';
 import { CreateExperienceDto } from './dto/create-experience.dto';
@@ -37,6 +41,7 @@ export class ExperiencesController {
     private readonly getCurrentExperienceUseCase: GetCurrentExperienceUseCase,
     private readonly createExperienceUseCase: CreateExperienceUseCase,
     private readonly updateExperienceUseCase: UpdateExperienceUseCase,
+    private readonly deleteExperienceUseCase: DeleteExperienceUseCase,
     private readonly experienceMapper: ExperienceMapper,
   ) {}
 
@@ -144,5 +149,18 @@ export class ExperiencesController {
       data,
       meta: {},
     };
+  }
+
+  @Delete(':id')
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ summary: 'Delete a work experience' })
+  @ApiResponse({ status: 200, description: 'Experience deleted successfully' })
+  @ApiUnauthorizedResponse({ description: 'Invalid API key' })
+  @ApiNotFoundResponse({ description: 'Experience not found' })
+  @ApiParam({ name: 'id', description: 'Experience ID' })
+  @ApiBearerAuth('api-key')
+  async deleteExperience(@Param('id') id: string) {
+    await this.deleteExperienceUseCase.execute({ id });
+    return { data: null, meta: {} };
   }
 }

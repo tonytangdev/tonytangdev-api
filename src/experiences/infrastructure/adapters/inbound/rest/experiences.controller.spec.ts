@@ -6,6 +6,7 @@ import { GetHighlightedExperiencesUseCase } from '../../../../application/ports/
 import { GetCurrentExperienceUseCase } from '../../../../application/ports/inbound/get-current-experience.use-case';
 import { CreateExperienceUseCase } from '../../../../application/ports/inbound/create-experience.use-case';
 import { UpdateExperienceUseCase } from '../../../../application/ports/inbound/update-experience.use-case';
+import { DeleteExperienceUseCase } from '../../../../application/ports/inbound/delete-experience.use-case';
 import { ExperienceMapper } from '../mappers/experience.mapper';
 import { Experience } from '../../../../domain/entities/experience.entity';
 import { ApiKeyGuard } from '../../../../../common/guards/api-key.guard';
@@ -17,6 +18,7 @@ describe('ExperiencesController', () => {
   let getCurrentExperienceUseCase: jest.Mocked<GetCurrentExperienceUseCase>;
   let createExperienceUseCase: jest.Mocked<CreateExperienceUseCase>;
   let updateExperienceUseCase: jest.Mocked<UpdateExperienceUseCase>;
+  let deleteExperienceUseCase: jest.Mocked<DeleteExperienceUseCase>;
 
   beforeEach(async () => {
     const mockGetExperiencesUseCase = {
@@ -36,6 +38,10 @@ describe('ExperiencesController', () => {
     };
 
     const mockUpdateExperienceUseCase = {
+      execute: jest.fn(),
+    };
+
+    const mockDeleteExperienceUseCase = {
       execute: jest.fn(),
     };
 
@@ -59,6 +65,10 @@ describe('ExperiencesController', () => {
           provide: UpdateExperienceUseCase,
           useValue: mockUpdateExperienceUseCase,
         },
+        {
+          provide: DeleteExperienceUseCase,
+          useValue: mockDeleteExperienceUseCase,
+        },
         ExperienceMapper,
       ],
     })
@@ -74,6 +84,7 @@ describe('ExperiencesController', () => {
     getCurrentExperienceUseCase = module.get(GetCurrentExperienceUseCase);
     createExperienceUseCase = module.get(CreateExperienceUseCase);
     updateExperienceUseCase = module.get(UpdateExperienceUseCase);
+    deleteExperienceUseCase = module.get(DeleteExperienceUseCase);
   });
 
   it('should be defined', () => {
@@ -320,6 +331,19 @@ describe('ExperiencesController', () => {
       expect(result.data.isHighlighted).toBe(true);
       expect(result.data.isCurrent).toBe(false);
       expect(result.meta).toEqual({});
+    });
+  });
+
+  describe('deleteExperience', () => {
+    it('should delete experience successfully', async () => {
+      deleteExperienceUseCase.execute.mockResolvedValue(undefined);
+
+      const result = await controller.deleteExperience('exp-1');
+
+      expect(deleteExperienceUseCase.execute).toHaveBeenCalledWith({
+        id: 'exp-1',
+      });
+      expect(result).toEqual({ data: null, meta: {} });
     });
   });
 });

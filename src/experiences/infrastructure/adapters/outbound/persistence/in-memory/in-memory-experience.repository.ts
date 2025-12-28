@@ -80,4 +80,12 @@ export class InMemoryExperienceRepository extends ExperienceRepositoryPort {
       Math.max(...this.experiences.map((exp) => exp.order)),
     );
   }
+
+  delete(id: string): Promise<void> {
+    const index = this.experiences.findIndex((exp) => exp.id === id);
+    if (index !== -1) {
+      this.experiences.splice(index, 1);
+    }
+    return Promise.resolve();
+  }
 }

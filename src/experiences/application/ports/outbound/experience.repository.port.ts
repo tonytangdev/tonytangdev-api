@@ -17,4 +17,5 @@ export abstract class ExperienceRepositoryPort {
     excludeId: string,
   ): Promise<Experience | null>;
   abstract getMaxOrder(): Promise<number>;
+  abstract delete(id: string): Promise<void>;
 }

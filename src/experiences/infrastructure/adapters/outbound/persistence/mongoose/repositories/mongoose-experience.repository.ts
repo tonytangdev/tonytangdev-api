@@ -113,6 +113,10 @@ export class MongooseExperienceRepository extends ExperienceRepositoryPort {
     return doc?.order ?? 0;
   }
 
+  async delete(id: string): Promise<void> {
+    await this.model.findByIdAndDelete(id).exec();
+  }
+
   private toDomain(doc: ExperienceDocument): Experience {
     return new Experience({
       id: doc._id,
