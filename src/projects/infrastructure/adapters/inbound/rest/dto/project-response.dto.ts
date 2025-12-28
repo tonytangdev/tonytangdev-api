@@ -39,6 +39,9 @@ export class ProjectResponseDto {
   @ApiProperty({ description: 'Key achievements', type: [String] })
   achievements: string[];
 
+  @ApiProperty({ description: 'Display order' })
+  order: number;
+
   @ApiProperty({ description: 'Whether project is highlighted' })
   isHighlighted: boolean;
 }

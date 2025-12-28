@@ -39,6 +39,25 @@ export class TypeOrmProjectRepository extends ProjectRepositoryPort {
     return projects.map((proj) => this.toDomain(proj));
   }
 
+  async create(project: Project): Promise<Project> {
+    const orm = this.toOrm(project);
+    const saved = await this.repository.save(orm);
+    return this.toDomain(saved);
+  }
+
+  async findByName(name: string): Promise<Project | null> {
+    const project = await this.repository.findOne({ where: { name } });
+    return project ? this.toDomain(project) : null;
+  }
+
+  async getMaxOrder(): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder('project')
+      .select('MAX(project.order)', 'max')
+      .getRawOne<{ max: number | null }>();
+    return result?.max ?? 0;
+  }
+
   private toDomain(orm: ProjectOrm): Project {
     return new Project({
       id: orm.id,
@@ -54,5 +73,22 @@ export class TypeOrmProjectRepository extends ProjectRepositoryPort {
       order: orm.order,
       isHighlighted: orm.isHighlighted,
     });
+  }
+
+  private toOrm(project: Project): ProjectOrm {
+    const orm = new ProjectOrm();
+    orm.id = project.id;
+    orm.name = project.name;
+    orm.description = project.description;
+    orm.startDate = project.startDate;
+    orm.endDate = project.endDate;
+    orm.technologies = project.technologies;
+    orm.repositoryLink = project.repositoryLink;
+    orm.demoLink = project.demoLink;
+    orm.websiteLink = project.websiteLink;
+    orm.achievements = project.achievements;
+    orm.order = project.order;
+    orm.isHighlighted = project.isHighlighted;
+    return orm;
   }
 }

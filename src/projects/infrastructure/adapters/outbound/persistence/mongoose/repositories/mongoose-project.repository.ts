@@ -32,6 +32,26 @@ export class MongooseProjectRepository extends ProjectRepositoryPort {
     return docs.map((doc) => this.toDomain(doc));
   }
 
+  async create(project: Project): Promise<Project> {
+    const doc = new this.model(this.toDocument(project));
+    const saved = await doc.save();
+    return this.toDomain(saved);
+  }
+
+  async findByName(name: string): Promise<Project | null> {
+    const doc = await this.model.findOne({ name }).exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async getMaxOrder(): Promise<number> {
+    const result = await this.model
+      .findOne()
+      .sort({ order: -1 })
+      .select('order')
+      .exec();
+    return result?.order ?? 0;
+  }
+
   private toDomain(doc: ProjectDocument): Project {
     return new Project({
       id: doc._id,
@@ -47,5 +67,23 @@ export class MongooseProjectRepository extends ProjectRepositoryPort {
       order: doc.order,
       isHighlighted: doc.isHighlighted,
     });
+  }
+
+  private toDocument(project: Project): Partial<ProjectDocument> {
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      _id: project.id as any,
+      name: project.name,
+      description: project.description,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      technologies: project.technologies,
+      repositoryLink: project.repositoryLink,
+      demoLink: project.demoLink,
+      websiteLink: project.websiteLink,
+      achievements: project.achievements,
+      order: project.order,
+      isHighlighted: project.isHighlighted,
+    };
   }
 }

@@ -279,4 +279,285 @@ describe('Projects API (e2e)', () => {
         });
     });
   });
+
+  describe('POST /api/v1/projects', () => {
+    const validApiKey = 'test-api-key';
+
+    it('should create a new project with valid data', () => {
+      const projectName = `E-commerce Platform ${Date.now()}`;
+      return request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: projectName,
+          description: 'A full-featured e-commerce platform',
+          startDate: '2024-01-15',
+          technologies: ['TypeScript', 'React', 'Node.js'],
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data');
+          expect(res.body).toHaveProperty('meta');
+          expect(res.body.data).toHaveProperty('id');
+          expect(res.body.data.name).toBe(projectName);
+          expect(res.body.data.description).toBe(
+            'A full-featured e-commerce platform',
+          );
+          expect(res.body.data.technologies).toContain('TypeScript');
+          expect(res.body.data.startDate).toBeTruthy();
+          expect(res.body.data.isHighlighted).toBe(false);
+          expect(res.body.meta).toEqual({});
+        });
+    });
+
+    it('should create project with all fields', () => {
+      const projectName = `Portfolio Website ${Date.now()}`;
+      return request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: projectName,
+          description: 'Personal portfolio with blog',
+          startDate: '2023-06-01',
+          endDate: '2023-12-31',
+          technologies: ['Next.js', 'TypeScript'],
+          repositoryLink: 'https://github.com/user/portfolio',
+          demoLink: 'https://demo.portfolio.com',
+          websiteLink: 'https://portfolio.com',
+          achievements: ['Featured on Product Hunt', '1000+ visitors'],
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.name).toBe(projectName);
+          expect(res.body.data.endDate).toBeTruthy();
+          expect(res.body.data.repositoryLink).toBe(
+            'https://github.com/user/portfolio',
+          );
+          expect(res.body.data.achievements).toEqual([
+            'Featured on Product Hunt',
+            '1000+ visitors',
+          ]);
+        });
+    });
+
+    it('should reject request without API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .send({
+          name: 'Test Project',
+          description: 'A test project',
+          startDate: '2024-01-01',
+          technologies: ['JavaScript'],
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body).toHaveProperty('message');
+        });
+    });
+
+    it('should reject request with invalid API key', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', 'invalid-key')
+        .send({
+          name: 'Test Project',
+          description: 'A test project',
+          startDate: '2024-01-01',
+          technologies: ['JavaScript'],
+        })
+        .expect(401);
+    });
+
+    it('should reject duplicate project name', async () => {
+      const projectData = {
+        name: 'Unique Project Name',
+        description: 'A unique project',
+        startDate: '2024-02-01',
+        technologies: ['Vue.js'],
+      };
+
+      // Create first project
+      await request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send(projectData)
+        .expect(201);
+
+      // Try to create duplicate
+      return request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send(projectData)
+        .expect(409)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 409);
+          expect(res.body).toHaveProperty('message');
+          expect(res.body.message).toContain('already exists');
+        });
+    });
+
+    it('should reject missing required fields', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Incomplete Project',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+        });
+    });
+
+    it('should reject invalid URL format for repositoryLink', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Project with Invalid URL',
+          description: 'Testing invalid URL',
+          startDate: '2024-03-01',
+          technologies: ['React'],
+          repositoryLink: 'not-a-valid-url',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+          expect(res.body).toHaveProperty('message');
+        });
+    });
+
+    it('should reject invalid URL format for demoLink', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Project with Invalid Demo URL',
+          description: 'Testing invalid demo URL',
+          startDate: '2024-03-01',
+          technologies: ['React'],
+          demoLink: 'invalid-demo-url',
+        })
+        .expect(400);
+    });
+
+    it('should reject empty technologies array', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Project without Technologies',
+          description: 'Testing empty technologies',
+          startDate: '2024-03-01',
+          technologies: [],
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 400);
+        });
+    });
+
+    it('should auto-increment order correctly', async () => {
+      // Get current projects to determine max order
+      const getAllRes = await request(app.getHttpServer())
+        .get('/api/v1/projects')
+        .expect(200);
+
+      const maxOrder = Math.max(
+        ...getAllRes.body.data.map((p: any) => p.order || 0),
+      );
+
+      // Create a new project
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Order Test Project',
+          description: 'Testing order auto-increment',
+          startDate: '2024-04-01',
+          technologies: ['Python'],
+        })
+        .expect(201);
+
+      // Verify the new project has order = maxOrder + 1
+      expect(createRes.body.data).toHaveProperty('order');
+      expect(createRes.body.data.order).toBe(maxOrder + 1);
+    });
+
+    it('should include created project in GET response', async () => {
+      const projectData = {
+        name: `Test Project ${Date.now()}`,
+        description: 'A test project for verification',
+        startDate: '2024-05-01',
+        technologies: ['Rust', 'WebAssembly'],
+      };
+
+      // Create project
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send(projectData)
+        .expect(201);
+
+      const createdProjectId = createRes.body.data.id;
+
+      // Verify it appears in GET /api/v1/projects
+      const getRes = await request(app.getHttpServer())
+        .get('/api/v1/projects')
+        .expect(200);
+
+      const foundProject = getRes.body.data.find(
+        (proj: any) => proj.id === createdProjectId,
+      );
+      expect(foundProject).toBeDefined();
+      expect(foundProject.name).toBe(projectData.name);
+      expect(foundProject.technologies).toEqual(projectData.technologies);
+    });
+
+    it('should format dates as ISO strings in response', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Date Format Test Project',
+          description: 'Testing date formatting',
+          startDate: '2024-06-15',
+          endDate: '2024-12-31',
+          technologies: ['Go'],
+        })
+        .expect(201);
+
+      const project = createRes.body.data;
+
+      // Verify startDate is ISO string
+      expect(typeof project.startDate).toBe('string');
+      expect(project.startDate).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+      // Verify endDate is ISO string
+      expect(typeof project.endDate).toBe('string');
+      expect(project.endDate).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+
+    it('should handle project with only required fields and default optional fields', () => {
+      return request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: 'Minimal Project',
+          description: 'A minimal project',
+          startDate: '2024-07-01',
+          technologies: ['Swift'],
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.endDate).toBeNull();
+          expect(res.body.data.repositoryLink).toBeNull();
+          expect(res.body.data.demoLink).toBeNull();
+          expect(res.body.data.websiteLink).toBeNull();
+          expect(res.body.data.achievements).toEqual([]);
+          expect(res.body.data.isHighlighted).toBe(false);
+        });
+    });
+  });
 });

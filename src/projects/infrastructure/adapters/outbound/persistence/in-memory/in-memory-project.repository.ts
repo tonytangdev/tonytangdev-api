@@ -31,6 +31,24 @@ export class InMemoryProjectRepository extends ProjectRepositoryPort {
     );
   }
 
+  async create(project: Project): Promise<Project> {
+    this.projects.push(project);
+    return Promise.resolve(project);
+  }
+
+  async findByName(name: string): Promise<Project | null> {
+    const project = this.projects.find((p) => p.name === name);
+    return Promise.resolve(project || null);
+  }
+
+  async getMaxOrder(): Promise<number> {
+    if (this.projects.length === 0) {
+      return Promise.resolve(0);
+    }
+    const maxOrder = Math.max(...this.projects.map((p) => p.order));
+    return Promise.resolve(maxOrder);
+  }
+
   private normalizeForSlug(tech: string): string {
     return tech.toLowerCase().replace(/[.\s]+/g, '-');
   }

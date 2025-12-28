@@ -16,6 +16,7 @@ export class ProjectMapper {
       demoLink: project.demoLink,
       websiteLink: project.websiteLink,
       achievements: project.achievements,
+      order: project.order,
       isHighlighted: project.isHighlighted,
     };
   }
