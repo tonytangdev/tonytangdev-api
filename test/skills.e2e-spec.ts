@@ -870,7 +870,9 @@ describe('Skills API (e2e)', () => {
 
     it('should return 404 for non-existent category', () => {
       return request(app.getHttpServer())
-        .delete('/api/v1/skills/categories/550e8400-e29b-41d4-a716-446655440000')
+        .delete(
+          '/api/v1/skills/categories/550e8400-e29b-41d4-a716-446655440000',
+        )
         .set('x-api-key', validApiKey)
         .expect(404)
         .expect((res) => {

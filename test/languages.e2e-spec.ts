@@ -398,4 +398,79 @@ describe('Languages API (e2e)', () => {
       }
     });
   });
+
+  describe('DELETE /api/v1/languages/:id', () => {
+    const validApiKey = 'test-api-key';
+    let languageIdToDelete: string;
+
+    beforeEach(async () => {
+      // Create a language to delete
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/languages')
+        .set('x-api-key', validApiKey)
+        .send({
+          name: `Test Delete Language ${Date.now()}`,
+          proficiency: 'elementary',
+          isNative: false,
+          isHighlighted: false,
+        });
+      languageIdToDelete = createRes.body.data.id;
+    });
+
+    it('should delete language successfully with valid API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/languages/${languageIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('data', null);
+          expect(res.body).toHaveProperty('meta');
+        });
+    });
+
+    it('should reject delete without API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/languages/${languageIdToDelete}`)
+        .expect(401)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 401);
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should reject delete with invalid API key', () => {
+      return request(app.getHttpServer())
+        .delete(`/api/v1/languages/${languageIdToDelete}`)
+        .set('x-api-key', 'wrong-key')
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toContain('Invalid API key');
+        });
+    });
+
+    it('should return 404 for non-existent language', () => {
+      return request(app.getHttpServer())
+        .delete('/api/v1/languages/550e8400-e29b-41d4-a716-446655440000')
+        .set('x-api-key', validApiKey)
+        .expect(404)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('statusCode', 404);
+          expect(res.body.message).toContain('not found');
+        });
+    });
+
+    it('should actually remove the language from database', async () => {
+      // Delete the language
+      await request(app.getHttpServer())
+        .delete(`/api/v1/languages/${languageIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(200);
+
+      // Verify it's gone by trying to delete again
+      return request(app.getHttpServer())
+        .delete(`/api/v1/languages/${languageIdToDelete}`)
+        .set('x-api-key', validApiKey)
+        .expect(404);
+    });
+  });
 });

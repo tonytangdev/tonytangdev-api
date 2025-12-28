@@ -9,6 +9,7 @@ import { GetLanguagesUseCase } from './application/ports/inbound/get-languages.u
 import { GetHighlightedLanguagesUseCase } from './application/ports/inbound/get-highlighted-languages.use-case';
 import { GetNativeLanguagesUseCase } from './application/ports/inbound/get-native-languages.use-case';
 import { CreateLanguageUseCase } from './application/ports/inbound/create-language.use-case';
+import { DeleteLanguageUseCase } from './application/ports/inbound/delete-language.use-case';
 
 // Application ports (outbound)
 import { LanguageRepositoryPort } from './application/ports/outbound/language.repository.port';
@@ -18,6 +19,7 @@ import { GetLanguagesService } from './application/services/get-languages.servic
 import { GetHighlightedLanguagesService } from './application/services/get-highlighted-languages.service';
 import { GetNativeLanguagesService } from './application/services/get-native-languages.service';
 import { CreateLanguageService } from './application/services/create-language.service';
+import { DeleteLanguageService } from './application/services/delete-language.service';
 
 // Infrastructure adapters (outbound) - In-Memory
 import { InMemoryLanguageRepository } from './infrastructure/adapters/outbound/persistence/in-memory/in-memory-language.repository';
@@ -54,6 +56,7 @@ export class LanguagesModule {
           useClass: GetNativeLanguagesService,
         },
         { provide: CreateLanguageUseCase, useClass: CreateLanguageService },
+        { provide: DeleteLanguageUseCase, useClass: DeleteLanguageService },
         {
           provide: LanguageRepositoryPort,
           useClass: InMemoryLanguageRepository,
@@ -112,6 +115,7 @@ export class LanguagesModule {
           useClass: GetNativeLanguagesService,
         },
         { provide: CreateLanguageUseCase, useClass: CreateLanguageService },
+        { provide: DeleteLanguageUseCase, useClass: DeleteLanguageService },
 
         // Outbound adapters (repositories)
         ...repoProviders,

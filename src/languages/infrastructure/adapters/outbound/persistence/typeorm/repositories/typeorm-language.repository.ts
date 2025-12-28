@@ -48,12 +48,21 @@ export class TypeOrmLanguageRepository extends LanguageRepositoryPort {
     return language ? this.toDomain(language) : null;
   }
 
+  async findById(id: string): Promise<Language | null> {
+    const language = await this.repository.findOne({ where: { id } });
+    return language ? this.toDomain(language) : null;
+  }
+
   async getMaxOrder(): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('language')
       .select('MAX(language.order)', 'max')
       .getRawOne<{ max: number | null }>();
     return result?.max ?? 0;
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
   }
 
   private toDomain(orm: LanguageOrm): Language {

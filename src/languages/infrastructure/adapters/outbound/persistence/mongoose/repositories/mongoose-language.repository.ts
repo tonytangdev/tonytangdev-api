@@ -46,6 +46,11 @@ export class MongooseLanguageRepository extends LanguageRepositoryPort {
     return doc ? this.toDomain(doc) : null;
   }
 
+  async findById(id: string): Promise<Language | null> {
+    const doc = await this.model.findById(id).exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
   async getMaxOrder(): Promise<number> {
     const result = await this.model
       .findOne()
@@ -53,6 +58,10 @@ export class MongooseLanguageRepository extends LanguageRepositoryPort {
       .select('order')
       .exec();
     return result?.order ?? 0;
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.model.findByIdAndDelete(id).exec();
   }
 
   private toDomain(doc: LanguageDocument): Language {

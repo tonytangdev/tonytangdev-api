@@ -4,6 +4,7 @@ import { GetLanguagesUseCase } from '../../../../application/ports/inbound/get-l
 import { GetHighlightedLanguagesUseCase } from '../../../../application/ports/inbound/get-highlighted-languages.use-case';
 import { GetNativeLanguagesUseCase } from '../../../../application/ports/inbound/get-native-languages.use-case';
 import { CreateLanguageUseCase } from '../../../../application/ports/inbound/create-language.use-case';
+import { DeleteLanguageUseCase } from '../../../../application/ports/inbound/delete-language.use-case';
 import { LanguageMapper } from '../mappers/language.mapper';
 import { Language } from '../../../../domain/entities/language.entity';
 import { LanguageProficiency } from '../../../../domain/value-objects/language-proficiency.vo';
@@ -15,6 +16,7 @@ describe('LanguagesController', () => {
   let getHighlightedLanguagesUseCase: jest.Mocked<GetHighlightedLanguagesUseCase>;
   let getNativeLanguagesUseCase: jest.Mocked<GetNativeLanguagesUseCase>;
   let createLanguageUseCase: jest.Mocked<CreateLanguageUseCase>;
+  let deleteLanguageUseCase: jest.Mocked<DeleteLanguageUseCase>;
 
   beforeEach(async () => {
     const mockGetLanguagesUseCase = {
@@ -33,6 +35,10 @@ describe('LanguagesController', () => {
       execute: jest.fn(),
     };
 
+    const mockDeleteLanguageUseCase = {
+      execute: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [LanguagesController],
       providers: [
@@ -46,6 +52,7 @@ describe('LanguagesController', () => {
           useValue: mockGetNativeLanguagesUseCase,
         },
         { provide: CreateLanguageUseCase, useValue: mockCreateLanguageUseCase },
+        { provide: DeleteLanguageUseCase, useValue: mockDeleteLanguageUseCase },
         LanguageMapper,
       ],
     })
@@ -58,6 +65,7 @@ describe('LanguagesController', () => {
     getHighlightedLanguagesUseCase = module.get(GetHighlightedLanguagesUseCase);
     getNativeLanguagesUseCase = module.get(GetNativeLanguagesUseCase);
     createLanguageUseCase = module.get(CreateLanguageUseCase);
+    deleteLanguageUseCase = module.get(DeleteLanguageUseCase);
   });
 
   it('should be defined', () => {
@@ -246,6 +254,20 @@ describe('LanguagesController', () => {
 
         expect(result.data.proficiency).toBe(proficiency);
       }
+    });
+  });
+
+  describe('deleteLanguage', () => {
+    it('should delete a language successfully', async () => {
+      deleteLanguageUseCase.execute.mockResolvedValue(undefined);
+
+      const result = await controller.deleteLanguage('lang-123');
+
+      expect(deleteLanguageUseCase.execute).toHaveBeenCalledWith({
+        id: 'lang-123',
+      });
+      expect(result.data).toBeNull();
+      expect(result.meta).toEqual({});
     });
   });
 });

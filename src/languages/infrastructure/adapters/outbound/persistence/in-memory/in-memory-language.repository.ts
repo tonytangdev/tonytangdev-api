@@ -43,11 +43,24 @@ export class InMemoryLanguageRepository implements LanguageRepositoryPort {
     return Promise.resolve(language || null);
   }
 
+  async findById(id: string): Promise<Language | null> {
+    const language = this.languages.find((l) => l.id === id);
+    return Promise.resolve(language || null);
+  }
+
   async getMaxOrder(): Promise<number> {
     if (this.languages.length === 0) {
       return Promise.resolve(0);
     }
     const maxOrder = Math.max(...this.languages.map((l) => l.order));
     return Promise.resolve(maxOrder);
+  }
+
+  async delete(id: string): Promise<void> {
+    const index = this.languages.findIndex((l) => l.id === id);
+    if (index !== -1) {
+      this.languages.splice(index, 1);
+    }
+    return Promise.resolve();
   }
 }
