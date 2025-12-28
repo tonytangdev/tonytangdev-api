@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { ProjectsController } from './projects.controller';
 import { GetProjectsUseCase } from '../../../../application/ports/inbound/get-projects.use-case';
 import { GetProjectByIdUseCase } from '../../../../application/ports/inbound/get-project-by-id.use-case';
@@ -218,6 +219,160 @@ describe('ProjectsController', () => {
       expect(result.data).toHaveProperty('description');
       expect(result.data).toHaveProperty('startDate');
       expect(result.data).toHaveProperty('technologies');
+    });
+  });
+
+  describe('getProjects', () => {
+    it('should return all projects with total count', async () => {
+      const projects = [
+        new Project({
+          id: 'proj-1',
+          name: 'Project A',
+          description: 'Description A',
+          startDate: new Date('2024-01-01'),
+          endDate: null,
+          technologies: ['TypeScript'],
+          repositoryLink: null,
+          demoLink: null,
+          websiteLink: null,
+          achievements: [],
+          order: 1,
+          isHighlighted: false,
+        }),
+        new Project({
+          id: 'proj-2',
+          name: 'Project B',
+          description: 'Description B',
+          startDate: new Date('2024-02-01'),
+          endDate: null,
+          technologies: ['React'],
+          repositoryLink: null,
+          demoLink: null,
+          websiteLink: null,
+          achievements: [],
+          order: 2,
+          isHighlighted: false,
+        }),
+      ];
+
+      getProjectsUseCase.execute.mockResolvedValue(projects);
+
+      const result = await controller.getProjects();
+
+      expect(getProjectsUseCase.execute).toHaveBeenCalled();
+      expect(result.data).toHaveLength(2);
+      expect(result.meta).toEqual({ total: 2 });
+      expect(result.data[0]).toHaveProperty('id', 'proj-1');
+      expect(result.data[1]).toHaveProperty('id', 'proj-2');
+    });
+
+    it('should return empty array when no projects exist', async () => {
+      getProjectsUseCase.execute.mockResolvedValue([]);
+
+      const result = await controller.getProjects();
+
+      expect(result.data).toHaveLength(0);
+      expect(result.meta).toEqual({ total: 0 });
+    });
+  });
+
+  describe('getProjectById', () => {
+    it('should return a project by id', async () => {
+      const project = new Project({
+        id: 'proj-123',
+        name: 'Test Project',
+        description: 'Test Description',
+        startDate: new Date('2024-01-01'),
+        endDate: null,
+        technologies: ['TypeScript', 'NestJS'],
+        repositoryLink: 'https://github.com/test/repo',
+        demoLink: null,
+        websiteLink: null,
+        achievements: ['Achievement 1'],
+        order: 1,
+        isHighlighted: true,
+      });
+
+      getProjectByIdUseCase.execute.mockResolvedValue(project);
+
+      const result = await controller.getProjectById('proj-123');
+
+      expect(getProjectByIdUseCase.execute).toHaveBeenCalledWith('proj-123');
+      expect(result.data).toHaveProperty('id', 'proj-123');
+      expect(result.data).toHaveProperty('name', 'Test Project');
+      expect(result.data).toHaveProperty('technologies');
+      expect(result.data.technologies).toContain('TypeScript');
+      expect(result.meta).toEqual({});
+    });
+
+    it('should throw NotFoundException when project not found', async () => {
+      getProjectByIdUseCase.execute.mockResolvedValue(null);
+
+      await expect(controller.getProjectById('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(controller.getProjectById('nonexistent')).rejects.toThrow(
+        "Project with id 'nonexistent' not found",
+      );
+    });
+  });
+
+  describe('getProjectsByTechnology', () => {
+    it('should return projects filtered by technology', async () => {
+      const projects = [
+        new Project({
+          id: 'proj-1',
+          name: 'TypeScript Project',
+          description: 'A TypeScript project',
+          startDate: new Date('2024-01-01'),
+          endDate: null,
+          technologies: ['TypeScript', 'Node.js'],
+          repositoryLink: null,
+          demoLink: null,
+          websiteLink: null,
+          achievements: [],
+          order: 1,
+          isHighlighted: false,
+        }),
+        new Project({
+          id: 'proj-2',
+          name: 'Another TypeScript Project',
+          description: 'Another project with TypeScript',
+          startDate: new Date('2024-02-01'),
+          endDate: null,
+          technologies: ['TypeScript', 'React'],
+          repositoryLink: null,
+          demoLink: null,
+          websiteLink: null,
+          achievements: [],
+          order: 2,
+          isHighlighted: false,
+        }),
+      ];
+
+      getProjectsByTechnologyUseCase.execute.mockResolvedValue(projects);
+
+      const result = await controller.getProjectsByTechnology('typescript');
+
+      expect(getProjectsByTechnologyUseCase.execute).toHaveBeenCalledWith(
+        'typescript',
+      );
+      expect(result.data).toHaveLength(2);
+      expect(result.meta).toEqual({ total: 2 });
+      expect(result.data[0].technologies).toContain('TypeScript');
+      expect(result.data[1].technologies).toContain('TypeScript');
+    });
+
+    it('should return empty array when no projects match technology', async () => {
+      getProjectsByTechnologyUseCase.execute.mockResolvedValue([]);
+
+      const result = await controller.getProjectsByTechnology('rust');
+
+      expect(getProjectsByTechnologyUseCase.execute).toHaveBeenCalledWith(
+        'rust',
+      );
+      expect(result.data).toHaveLength(0);
+      expect(result.meta).toEqual({ total: 0 });
     });
   });
 });
