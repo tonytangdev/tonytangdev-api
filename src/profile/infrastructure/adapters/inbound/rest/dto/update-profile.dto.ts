@@ -11,6 +11,7 @@ import {
   IsUrl,
   Min,
   Max,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AvailabilityStatus } from '../../../../../domain/value-objects/availability-status.vo';
@@ -62,12 +63,13 @@ export class UpdateProfileDto {
   title?: string;
 
   @ApiPropertyOptional({
-    description: 'Biography',
+    description: 'Biography (Markdown supported)',
     example:
-      'Passionate full-stack developer with expertise in modern web technologies.',
+      '# About Me\n\nPassionate **full-stack developer** with expertise in modern web technologies.',
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(10000)
   @IsOptional()
   bio?: string;
 

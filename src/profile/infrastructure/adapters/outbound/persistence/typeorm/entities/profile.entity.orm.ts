@@ -16,6 +16,9 @@ export class ProfileOrm {
   @Column('text')
   bio: string;
 
+  @Column('text')
+  bioHtml: string;
+
   @Column()
   email: string;
 

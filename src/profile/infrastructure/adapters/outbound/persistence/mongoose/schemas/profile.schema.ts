@@ -18,6 +18,9 @@ export class ProfileSchema {
   bio: string;
 
   @Prop({ required: true })
+  bioHtml: string;
+
+  @Prop({ required: true })
   email: string;
 
   @Prop({ required: false, type: String, default: null })

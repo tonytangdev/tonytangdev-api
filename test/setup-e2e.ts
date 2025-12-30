@@ -1,3 +1,7 @@
+// Mock ESM modules to avoid Jest compatibility issues
+jest.mock('jsdom');
+jest.mock('dompurify');
+
 // Set environment variables for e2e tests
 process.env.API_KEY = 'test-api-key';
 process.env.SKILLS_MODULE_ENABLED = 'true';

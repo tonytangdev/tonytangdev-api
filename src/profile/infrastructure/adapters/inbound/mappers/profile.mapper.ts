@@ -12,6 +12,7 @@ export class ProfileMapper {
       fullName: profile.fullName,
       title: profile.title,
       bio: profile.bio,
+      bioHtml: profile.bioHtml,
       email: profile.email,
       phone: profile.phone,
       location: profile.location,

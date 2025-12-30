@@ -36,6 +36,9 @@ import {
 import { ProfileController } from './infrastructure/adapters/inbound/rest/profile.controller';
 import { ProfileMapper } from './infrastructure/adapters/inbound/mappers/profile.mapper';
 
+// Common services
+import { MarkdownService } from '../common/services/markdown.service';
+
 @Module({})
 export class ProfileModule {
   static forTest(): DynamicModule {
@@ -51,6 +54,7 @@ export class ProfileModule {
           useClass: InMemoryProfileRepository,
         },
         ProfileMapper,
+        MarkdownService,
       ],
       controllers: [ProfileController],
     };
@@ -103,6 +107,9 @@ export class ProfileModule {
 
         // Mappers
         ProfileMapper,
+
+        // Common services
+        MarkdownService,
       ],
       controllers: [ProfileController],
     };

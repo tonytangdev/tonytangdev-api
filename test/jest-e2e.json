@@ -6,5 +6,16 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(@exodus|html-encoding-sniffer|marked)/)"
+  ],
+  "moduleNameMapper": {
+    "^marked$": "<rootDir>/../node_modules/marked/lib/marked.umd.js"
+  },
+  "globals": {
+    "ts-jest": {
+      "useESM": false
+    }
+  },
   "setupFiles": ["<rootDir>/setup-e2e.ts"]
 }

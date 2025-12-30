@@ -14,8 +14,11 @@ export class ProfileResponseDto {
   })
   title: string;
 
-  @ApiProperty({ description: 'Biography' })
+  @ApiProperty({ description: 'Biography (Markdown source)' })
   bio: string;
+
+  @ApiProperty({ description: 'Biography (Rendered HTML)' })
+  bioHtml: string;
 
   @ApiProperty({ description: 'Email address', example: 'tony@example.com' })
   email: string;

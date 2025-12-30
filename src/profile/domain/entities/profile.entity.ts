@@ -6,6 +6,7 @@ export interface ProfileProps {
   fullName: string;
   title: string;
   bio: string;
+  bioHtml: string;
   email: string;
   phone: string | null;
   location: string;
@@ -22,6 +23,7 @@ export class Profile {
   public readonly fullName: string;
   public readonly title: string;
   public readonly bio: string;
+  public readonly bioHtml: string;
   public readonly email: string;
   public readonly phone: string | null;
   public readonly location: string;
@@ -37,6 +39,7 @@ export class Profile {
     this.fullName = props.fullName;
     this.title = props.title;
     this.bio = props.bio;
+    this.bioHtml = props.bioHtml;
     this.email = props.email;
     this.phone = props.phone;
     this.location = props.location;

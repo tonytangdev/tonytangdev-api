@@ -10,10 +10,14 @@ import {
 import { ProfileRepositoryPort } from '../ports/outbound/profile.repository.port';
 import { Profile } from '../../domain/entities/profile.entity';
 import { SocialLink } from '../../domain/entities/social-link.entity';
+import { MarkdownService } from '../../../common/services/markdown.service';
 
 @Injectable()
 export class UpdateProfileService implements UpdateProfileUseCase {
-  constructor(private readonly profileRepo: ProfileRepositoryPort) {}
+  constructor(
+    private readonly profileRepo: ProfileRepositoryPort,
+    private readonly markdownService: MarkdownService,
+  ) {}
 
   async execute(input: UpdateProfileInput): Promise<Profile> {
     // Fetch existing profile
@@ -30,12 +34,17 @@ export class UpdateProfileService implements UpdateProfileUseCase {
       }
     }
 
-    // Merge input with existing profile
+    const updatedBio = input.bio ?? existingProfile.bio;
+    const bioHtml = input.bio
+      ? this.markdownService.renderMarkdown(input.bio)
+      : existingProfile.bioHtml;
+
     const updatedProfile = new Profile({
-      id: existingProfile.id, // Preserve id
+      id: existingProfile.id,
       fullName: input.fullName ?? existingProfile.fullName,
       title: input.title ?? existingProfile.title,
-      bio: input.bio ?? existingProfile.bio,
+      bio: updatedBio,
+      bioHtml: bioHtml,
       email: input.email ?? existingProfile.email,
       phone: input.phone !== undefined ? input.phone : existingProfile.phone,
       location: input.location ?? existingProfile.location,

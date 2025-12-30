@@ -11,10 +11,14 @@ import {
 import { ProfileRepositoryPort } from '../ports/outbound/profile.repository.port';
 import { Profile } from '../../domain/entities/profile.entity';
 import { SocialLink } from '../../domain/entities/social-link.entity';
+import { MarkdownService } from '../../../common/services/markdown.service';
 
 @Injectable()
 export class CreateProfileService implements CreateProfileUseCase {
-  constructor(private readonly profileRepo: ProfileRepositoryPort) {}
+  constructor(
+    private readonly profileRepo: ProfileRepositoryPort,
+    private readonly markdownService: MarkdownService,
+  ) {}
 
   async execute(input: CreateProfileInput): Promise<Profile> {
     // Check if profile already exists
@@ -29,12 +33,14 @@ export class CreateProfileService implements CreateProfileUseCase {
       throw new BadRequestException('Invalid email format');
     }
 
-    // Create profile entity
+    const renderedBioHtml = this.markdownService.renderMarkdown(input.bio);
+
     const profile = new Profile({
       id: randomUUID(),
       fullName: input.fullName,
       title: input.title,
       bio: input.bio,
+      bioHtml: renderedBioHtml,
       email: input.email,
       phone: input.phone ?? null,
       location: input.location,

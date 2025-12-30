@@ -30,6 +30,7 @@ export class TypeOrmProfileRepository extends ProfileRepositoryPort {
     profileOrm.fullName = profile.fullName;
     profileOrm.title = profile.title;
     profileOrm.bio = profile.bio;
+    profileOrm.bioHtml = profile.bioHtml;
     profileOrm.email = profile.email;
     profileOrm.phone = profile.phone;
     profileOrm.location = profile.location;
@@ -66,6 +67,7 @@ export class TypeOrmProfileRepository extends ProfileRepositoryPort {
     existing.fullName = profile.fullName;
     existing.title = profile.title;
     existing.bio = profile.bio;
+    existing.bioHtml = profile.bioHtml;
     existing.email = profile.email;
     existing.phone = profile.phone;
     existing.location = profile.location;
@@ -100,6 +102,7 @@ export class TypeOrmProfileRepository extends ProfileRepositoryPort {
       fullName: orm.fullName,
       title: orm.title,
       bio: orm.bio,
+      bioHtml: orm.bioHtml,
       email: orm.email,
       phone: orm.phone,
       location: orm.location,

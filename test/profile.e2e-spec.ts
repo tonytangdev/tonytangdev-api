@@ -528,4 +528,222 @@ describe('Profile API (e2e)', () => {
         });
     });
   });
+
+  describe('Markdown Bio Support', () => {
+    const validApiKey = 'test-api-key';
+
+    describe('GET /api/v1/profile - bioHtml field', () => {
+      it('should return both bio and bioHtml fields', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/profile')
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile).toHaveProperty('bio');
+            expect(profile).toHaveProperty('bioHtml');
+            expect(typeof profile.bio).toBe('string');
+            expect(typeof profile.bioHtml).toBe('string');
+          });
+      });
+
+      it('bioHtml should contain HTML markup', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/profile')
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bioHtml).toMatch(/<[a-z][\s\S]*>/i);
+          });
+      });
+    });
+
+    describe('PATCH /api/v1/profile - markdown rendering', () => {
+      it('should render basic markdown (headings)', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: '# Heading 1\n## Heading 2' })
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bio).toContain('# Heading 1');
+            expect(profile.bioHtml).toContain('<h1>');
+            expect(profile.bioHtml).toContain('<h2>');
+            expect(profile.bioHtml).toContain('Heading 1');
+            expect(profile.bioHtml).toContain('Heading 2');
+          });
+      });
+
+      it('should render bold and italic', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: 'This is **bold** and *italic* text' })
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bioHtml).toContain('<strong>bold</strong>');
+            expect(profile.bioHtml).toContain('<em>italic</em>');
+          });
+      });
+
+      it('should render links', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: '[Google](https://google.com)' })
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bioHtml).toContain('<a href="https://google.com">');
+            expect(profile.bioHtml).toContain('Google');
+          });
+      });
+
+      it('should render lists', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: '- Item 1\n- Item 2\n- Item 3' })
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bioHtml).toContain('<ul>');
+            expect(profile.bioHtml).toContain('<li>');
+            expect(profile.bioHtml).toContain('Item 1');
+            expect(profile.bioHtml).toContain('Item 2');
+          });
+      });
+
+      it('should render code blocks', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: '```javascript\nconst x = 42;\n```' })
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bioHtml).toContain('<pre>');
+            expect(profile.bioHtml).toContain('<code');
+            expect(profile.bioHtml).toContain('const x = 42;');
+          });
+      });
+
+      it('should render GFM tables', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: '| Col1 | Col2 |\n|------|------|\n| A | B |' })
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bioHtml).toContain('<table>');
+            expect(profile.bioHtml).toContain('<th>');
+            expect(profile.bioHtml).toContain('<td>');
+            expect(profile.bioHtml).toContain('Col1');
+          });
+      });
+
+      it('should render GFM task lists', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: '- [x] Completed\n- [ ] Incomplete' })
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bioHtml).toContain('<input');
+            expect(profile.bioHtml).toContain('type="checkbox"');
+            expect(profile.bioHtml).toContain('checked');
+          });
+      });
+    });
+
+    describe('XSS prevention', () => {
+      it('should sanitize script tags', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: '<script>alert("XSS")</script>Safe text' })
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bioHtml).not.toContain('<script>');
+            expect(profile.bioHtml).not.toContain('alert');
+            expect(profile.bioHtml).toContain('Safe text');
+          });
+      });
+
+      it('should sanitize event handlers', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: '<img src="x" onerror="alert(1)" />' })
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bioHtml).not.toContain('onerror');
+            expect(profile.bioHtml).not.toContain('alert');
+          });
+      });
+
+      it('should preserve safe HTML elements', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: '<strong>Bold</strong> <em>Italic</em>' })
+          .expect(200)
+          .expect((res) => {
+            const profile = res.body.data;
+            expect(profile.bioHtml).toContain('<strong>Bold</strong>');
+            expect(profile.bioHtml).toContain('<em>Italic</em>');
+          });
+      });
+    });
+
+    describe('bio field validation', () => {
+      it('should enforce 10k character limit', () => {
+        const longBio = 'a'.repeat(10001);
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: longBio })
+          .expect(400);
+      });
+
+      it('should accept bio at exactly 10k characters', () => {
+        const maxBio = 'a'.repeat(10000);
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: maxBio })
+          .expect(200);
+      });
+    });
+
+    describe('bioHtml regeneration', () => {
+      it('should regenerate bioHtml when bio is updated', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ bio: '# New Heading' })
+          .expect(200)
+          .expect((res) => {
+            expect(res.body.data.bioHtml).toContain('<h1>New Heading</h1>');
+          });
+      });
+
+      it('should not modify bioHtml when bio is not updated', () => {
+        return request(app.getHttpServer())
+          .patch('/api/v1/profile')
+          .set('x-api-key', validApiKey)
+          .send({ fullName: 'Different Name' })
+          .expect(200)
+          .expect((res) => {
+            expect(res.body.data).toHaveProperty('bioHtml');
+            expect(res.body.data.bioHtml.length).toBeGreaterThan(0);
+          });
+      });
+    });
+  });
 });

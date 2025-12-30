@@ -8,6 +8,8 @@ export const seedProfile: Profile = new Profile({
   fullName: 'Tony Tang',
   title: 'Senior Software Engineer',
   bio: 'Passionate full-stack developer with expertise in modern web technologies and cloud architecture. Focused on building scalable, maintainable solutions.',
+  bioHtml:
+    '<p>Passionate full-stack developer with expertise in modern web technologies and cloud architecture. Focused on building scalable, maintainable solutions.</p>\n',
   email: 'tony@tonytang.dev',
   phone: '+1 (555) 123-4567',
   location: 'San Francisco, CA',

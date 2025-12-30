@@ -6,6 +6,7 @@ import { Profile } from '../../domain/entities/profile.entity';
 import { SocialLink } from '../../domain/entities/social-link.entity';
 import { AvailabilityStatus } from '../../domain/value-objects/availability-status.vo';
 import { SocialPlatform } from '../../domain/value-objects/social-platform.vo';
+import { MarkdownService } from '../../../common/services/markdown.service';
 
 describe('UpdateProfileService', () => {
   let service: UpdateProfileService;
@@ -16,6 +17,7 @@ describe('UpdateProfileService', () => {
     fullName: 'John Doe',
     title: 'Software Engineer',
     bio: 'Experienced developer',
+    bioHtml: '<p>Experienced developer</p>\n',
     email: 'john@example.com',
     phone: '+1-555-0000',
     location: 'Boston, MA',
@@ -40,10 +42,15 @@ describe('UpdateProfileService', () => {
       update: jest.fn(),
     };
 
+    const mockMarkdownService = {
+      renderMarkdown: jest.fn((md: string) => `<p>${md}</p>\n`),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UpdateProfileService,
         { provide: ProfileRepositoryPort, useValue: mockProfileRepo },
+        { provide: MarkdownService, useValue: mockMarkdownService },
       ],
     }).compile();
 

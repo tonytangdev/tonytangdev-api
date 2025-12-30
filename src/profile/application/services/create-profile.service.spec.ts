@@ -6,6 +6,7 @@ import { Profile } from '../../domain/entities/profile.entity';
 import { SocialLink } from '../../domain/entities/social-link.entity';
 import { AvailabilityStatus } from '../../domain/value-objects/availability-status.vo';
 import { SocialPlatform } from '../../domain/value-objects/social-platform.vo';
+import { MarkdownService } from '../../../common/services/markdown.service';
 
 describe('CreateProfileService', () => {
   let service: CreateProfileService;
@@ -17,10 +18,15 @@ describe('CreateProfileService', () => {
       create: jest.fn(),
     };
 
+    const mockMarkdownService = {
+      renderMarkdown: jest.fn((md: string) => `<p>${md}</p>\n`),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateProfileService,
         { provide: ProfileRepositoryPort, useValue: mockProfileRepo },
+        { provide: MarkdownService, useValue: mockMarkdownService },
       ],
     }).compile();
 
